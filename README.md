@@ -1,4 +1,4 @@
-Berikut adalah versi PRD yang telah dirapikan menggunakan format Markdown (huruf tebal, daftar berpoin, dan blok kode untuk visualisasi hierarki) agar lebih mudah dibaca dan disalin, **tanpa menghilangkan satu pun kata, field, atau detail dari draft asli Anda**.
+Berikut adalah dokumen Product Requirements Document (PRD) LogBook.ID versi MVP 1.0 yang sudah utuh, lengkap, dan mengintegrasikan sistem *Google Login Only* serta penyesuaian *database* dan *tech stack* tanpa ada bagian yang dikurangi.
 
 ---
 
@@ -86,12 +86,15 @@ KKN Desa Bontoa
 
 ## 4. USER FLOW
 
-**LOGIN**
+**LOGIN (Google SSO Only)**
 User membuka aplikasi
 ↓
-Login dengan Google
+Login **hanya** menggunakan Akun Google (SSO)
+*(Tidak ada fitur registrasi manual / input password)*
 ↓
-Akun dibuat otomatis
+Sistem meminta otorisasi akses Google Drive & Google Docs
+↓
+Akun & *root folder* terbuat otomatis
 ↓
 Masuk Dashboard
 
@@ -337,21 +340,13 @@ Export diakses melalui:
 * **Deskripsi:** ...
 * **Kendala:** ...
 * **Dokumentasi:** Foto
-
-
 * **Survey Lapangan**
 * **Jam:** 10.30 - 12.00
 * **Deskripsi:** ...
 * **Kendala:** ...
 * **Dokumentasi:** Foto
-
-
-
-
 * **Hari/Tanggal:** Selasa, 2 Juli 2026
 * *dan seterusnya.*
-
-
 
 ---
 
@@ -359,10 +354,12 @@ Export diakses melalui:
 
 **`users`**
 
-* `id`
+* `id` (UUID)
+* `google_id` *(Unique identifier dari Google)*
 * `name`
 * `email`
 * `avatar`
+*(Tabel tidak memerlukan kolom `password` karena autentikasi di-handle sepenuhnya oleh Google)*
 
 **`logbooks`**
 
@@ -403,12 +400,12 @@ Export diakses melalui:
 
 **Included**
 
-* ✅ Login Google
+* ✅ **Single Sign-On (SSO) Google Only**
 * ✅ Dashboard Logbook
 * ✅ CRUD Logbook
 * ✅ CRUD Kegiatan
 * ✅ Multi Upload Foto
-* ✅ Google Drive Storage
+* ✅ **Google Drive Storage Integration**
 * ✅ Auto Grouping Hari
 * ✅ Expand / Collapse Hari
 * ✅ Export Google Docs
@@ -450,8 +447,8 @@ Export diakses melalui:
 
 **Authentication**
 
-* Google OAuth
-* NextAuth
+* **NextAuth.js v5 / Auth.js**
+* **Google Provider Only** *(Dengan tambahan scopes untuk akses API Google Drive & Google Docs)*
 
 **Database**
 
