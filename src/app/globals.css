@@ -1,0 +1,249 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f9fb;
+  --foreground: #111827;
+  --card-background: #ffffff;
+  --card-border: #e5e7eb;
+  --accent-blue: #2563eb;
+  --accent-green: #22c55e;
+  --accent-yellow: #f59e0b;
+  --accent-red: #ef4444;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --fill-secondary: #f3f4f6;
+  --system-background: #f8f9fb;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--system-background);
+  color: var(--text-primary);
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* iOS-style card */
+.ios-card {
+  background: var(--card-background);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 0.5px solid var(--card-border);
+  transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.ios-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* iOS-style button */
+.ios-btn-primary {
+  background: var(--accent-blue);
+  color: white;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 12px 20px;
+  transition: all 0.2s;
+}
+
+.ios-btn-primary:hover {
+  opacity: 0.92;
+}
+
+.ios-btn-primary:active {
+  opacity: 0.85;
+  transform: scale(0.96);
+}
+
+/* iOS-style pill filter */
+.ios-pill {
+  padding: 6px 16px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: 0.5px solid var(--card-border);
+  background: var(--card-background);
+  color: var(--text-secondary);
+}
+
+.ios-pill:hover {
+  background: var(--fill-secondary);
+}
+
+.ios-pill.active {
+  background: var(--accent-blue);
+  color: white;
+  border-color: var(--accent-blue);
+}
+
+/* Progress bar */
+.ios-progress {
+  height: 6px;
+  background: var(--fill-secondary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.ios-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.ios-progress-bar.danger {
+  background: var(--accent-red);
+}
+
+.ios-progress-bar.warning {
+  background: var(--accent-yellow);
+}
+
+.ios-progress-bar.success {
+  background: var(--accent-green);
+}
+
+/* iOS-style separator */
+.ios-separator {
+  height: 0.5px;
+  background: var(--card-border);
+}
+
+/* iOS-style input */
+.ios-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--fill-secondary);
+  border-radius: 12px;
+  font-size: 15px;
+  color: var(--text-primary);
+  border: 0.5px solid transparent;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.ios-input:focus {
+  background: var(--card-background);
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.ios-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* iOS-style search */
+.ios-search {
+  background: var(--fill-secondary);
+  border-radius: 12px;
+  padding: 12px 16px 12px 40px;
+  font-size: 15px;
+  border: 0.5px solid transparent;
+  outline: none;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.ios-search:focus {
+  background: var(--card-background);
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.ios-search::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* iOS-style stat card */
+.ios-stat {
+  background: var(--card-background);
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 0.5px solid var(--card-border);
+}
+
+/* iOS-style badge */
+.ios-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.ios-badge-blue {
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--accent-blue);
+}
+
+.ios-badge-green {
+  background: rgba(34, 197, 94, 0.08);
+  color: var(--accent-green);
+}
+
+.ios-badge-yellow {
+  background: rgba(245, 158, 11, 0.08);
+  color: var(--accent-yellow);
+}
+
+.ios-badge-red {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--accent-red);
+}
+
+.ios-badge-gray {
+  background: var(--fill-secondary);
+  color: var(--text-secondary);
+}
+
+/* Safe area bottom */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* iOS-style section title */
+.ios-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-left: 4px;
+  margin-bottom: 8px;
+}
+
+/* iOS-style disclosure arrow */
+.ios-chevron {
+  width: 16px;
+  height: 16px;
+  color: var(--text-tertiary);
+  transition: transform 0.2s;
+}
+
+.ios-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* iOS-style icon container */
+.ios-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
