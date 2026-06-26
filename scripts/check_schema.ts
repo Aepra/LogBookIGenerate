@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "../lib/supabase-server";
+import { supabaseAdmin } from "../src/lib/supabase-server";
 
 type TableCheck = {
   name: string;
@@ -6,10 +6,38 @@ type TableCheck = {
 };
 
 const tablesToCheck: TableCheck[] = [
-  { name: "users", expectedColumns: ["id", "google_id", "name", "email", "avatar", "created_at", "drive_folder_id"] },
-  { name: "logbooks", expectedColumns: ["id", "user_id", "title", "description", "type", "created_at"] },
-  { name: "activities", expectedColumns: ["id", "logbook_id", "activity_date", "start_time", "end_time", "title", "description", "obstacle", "created_at"] },
-  { name: "photos", expectedColumns: ["id", "activity_id", "google_file_id", "google_drive_url"] },
+  {
+    name: "users",
+    expectedColumns: [
+      "id", "google_id", "name", "email", "avatar", "created_at",
+      "updated_at", "drive_folder_id", "deleted_at",
+      "nim", "university", "faculty", "study_program", "batch_year",
+    ],
+  },
+  {
+    name: "logbooks",
+    expectedColumns: [
+      "id", "user_id", "title", "description", "type", "created_at",
+      "start_date", "end_date", "status", "updated_at", "deleted_at",
+      "location", "institution_name", "supervisor_name", "mentor_name",
+    ],
+  },
+  {
+    name: "activities",
+    expectedColumns: [
+      "id", "logbook_id", "activity_date", "start_time", "end_time",
+      "title", "description", "obstacle", "created_at", "status",
+      "duration_minutes", "position", "updated_at", "deleted_at",
+    ],
+  },
+  {
+    name: "photos",
+    expectedColumns: [
+      "id", "activity_id", "google_file_id", "google_drive_url", "created_at",
+      "caption", "position", "is_primary", "mime_type", "file_size",
+      "updated_at", "deleted_at",
+    ],
+  },
 ];
 
 async function checkTable(tableName: string, expectedColumns: string[]) {
@@ -32,22 +60,16 @@ async function checkTable(tableName: string, expectedColumns: string[]) {
     console.log("Sample Data: (Table is empty)");
   }
 
-  // 2. Check columns
-  const { data: columnsData, error: rpcError } = await supabaseAdmin.rpc('get_table_columns', { table_name: tableName });
+  const actualColumns = sampleData.length > 0 ? Object.keys(sampleData[0]) : [];
+  console.log(`Actual columns in Supabase:`, actualColumns);
 
-  if (rpcError) {
-    console.error(`❌ [FAIL] Error fetching columns for table "${tableName}":`, rpcError.message);
-    return;
-  }
-
-  const actualColumns = columnsData.map((col: any) => col.column_name);
   const missingColumns = expectedColumns.filter(col => !actualColumns.includes(col));
   const extraColumns = actualColumns.filter((col: string) => !expectedColumns.includes(col));
 
   if (missingColumns.length === 0) {
     console.log(`✅ [OK] All expected columns are present.`);
   } else {
-    console.error(`❌ [FAIL] Missing columns: ${missingColumns.join(", ")}`);
+    console.error(`❌ [FAIL] Missing columns in spec: ${missingColumns.join(", ")}`);
   }
 
   if (extraColumns.length > 0) {

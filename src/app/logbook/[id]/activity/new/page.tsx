@@ -46,7 +46,7 @@ export default async function CreateActivityPage({
             href="/api/auth/signin"
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
           >
-            Sign in with Google
+            Masuk dengan Google
           </a>
         </div>
       </div>
@@ -70,13 +70,13 @@ export default async function CreateActivityPage({
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
         <div className="text-center max-w-md">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Logbook Not Found</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Logbook Tidak Ditemukan</h1>
           <p className="text-gray-500 mb-6">The logbook you are looking for does not exist.</p>
           <a
             href="/logbook"
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
           >
-            Back to Logbooks
+            Kembali ke Logbook
           </a>
         </div>
       </div>
@@ -106,7 +106,7 @@ export default async function CreateActivityPage({
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back to {logbook.title}
+          Kembali ke {logbook.title}
         </a>
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Create Activity</h1>
         <p className="text-sm text-gray-500 mt-1">

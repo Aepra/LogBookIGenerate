@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -65,6 +65,27 @@ export default function LogbookReviewClient({
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"pdf" | "docx" | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [iframeLoading, setIframeLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+
+  // Simulated progress bar for iframe loading
+
+  useEffect(() => {
+    if (iframeLoading) {
+      setProgress(0);
+      const interval = setInterval(() => {
+        setProgress((p) => {
+          if (p < 40) return p + Math.floor(Math.random() * 15) + 5;
+          if (p < 75) return p + Math.floor(Math.random() * 10) + 2;
+          if (p < 95) return p + Math.floor(Math.random() * 3) + 1;
+          return p;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setProgress(100);
+    }
+  }, [iframeLoading]);
 
   // Group activities by date for stats display
   const groupedActivities: Record<string, Activity[]> = {};
@@ -80,16 +101,87 @@ export default function LogbookReviewClient({
 
   const previewUrl = `/api/export/logbook/preview?logbook_id=${logbook.id}`;
 
+  const [exportProgress, setExportProgress] = useState(0);
+  const [exportPhase, setExportPhase] = useState("");
+
   const handleExport = async (format: "pdf" | "docx") => {
     setExporting(format);
+    setError(null);
+    setExportProgress(0);
+    setExportPhase("Menghubungkan...");
     try {
       const url = `/api/export/logbook/download?logbook_id=${logbook.id}&format=${format}`;
-      window.open(url, "_blank");
-    } catch {
-      setError("Gagal mengexport logbook.");
+      
+      // Start simulated progress for the generation phase
+      let progressInterval: ReturnType<typeof setInterval> | null = null;
+      progressInterval = setInterval(() => {
+        setExportProgress((p) => {
+          if (p < 30) return p + Math.floor(Math.random() * 10) + 3;
+          if (p < 60) return p + Math.floor(Math.random() * 5) + 1;
+          if (p < 85) return p + 1;
+          return p;
+        });
+      }, 500);
+
+      setExportPhase("Memproses dokumen...");
+      setExportProgress(5);
+
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error("Gagal mengunduh logbook.");
+      }
+
+      // Check if it was a cache hit (instant)
+      const cacheStatus = response.headers.get("X-Cache");
+      if (cacheStatus === "HIT") {
+        setExportProgress(90);
+        setExportPhase("Mengunduh file...");
+      } else {
+        setExportProgress(75);
+        setExportPhase("Mengunduh file...");
+      }
+
+      if (progressInterval) clearInterval(progressInterval);
+      
+      let filename = `LogBook_${logbook.title.replace(/[^a-zA-Z0-9]/g, "_")}.${format}`;
+      const disposition = response.headers.get("Content-Disposition");
+      if (disposition && disposition.indexOf("filename=") !== -1) {
+        const matches = /filename="([^"]+)"/.exec(disposition);
+        if (matches != null && matches[1]) {
+          filename = matches[1];
+        }
+      }
+
+      const blob = await response.blob();
+      setExportProgress(95);
+      setExportPhase("Menyimpan...");
+
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      
+      setExportProgress(100);
+      setExportPhase("Selesai!");
+
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(objectUrl);
+      }, 100);
+
+      // Keep the success state visible briefly
+      await new Promise(r => setTimeout(r, 800));
+      
+    } catch (err) {
+      setError("Gagal mengexport logbook. Silakan coba lagi.");
     } finally {
       setExporting(null);
       setShowExportModal(false);
+      setExportProgress(0);
+      setExportPhase("");
     }
   };
 
@@ -97,7 +189,7 @@ export default function LogbookReviewClient({
     <div className="min-h-screen bg-[var(--background-secondary)]">
       {/* ── Sticky Header ── */}
       <div className="sticky top-0 z-20 bg-[var(--background-secondary)]/80 backdrop-blur-lg border-b border-[var(--card-border)]">
-        <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+        <div className="max-w-7xl md:px-8 mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <Link
               href={`/logbook/${logbook.id}/detail`}
@@ -133,7 +225,7 @@ export default function LogbookReviewClient({
       </div>
 
       {/* ── Preview Content ── */}
-      <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-4">
+      <div className="max-w-7xl md:px-8 mx-auto px-4 sm:px-6 py-4">
         {error && (
           <div className="mb-4 p-3 rounded-xl text-[13px] font-medium bg-[rgba(239,68,68,0.1)] text-[var(--accent-red)]">
             {error}
@@ -144,11 +236,11 @@ export default function LogbookReviewClient({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
           <div className="ios-stat text-center py-3">
             <p className="text-lg font-bold text-[var(--accent-blue)]">{logbook.total_activities}</p>
-            <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Activities</p>
+            <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Aktivitas</p>
           </div>
           <div className="ios-stat text-center py-3">
             <p className="text-lg font-bold text-[var(--accent-yellow)]">{logbook.filled_days}</p>
-            <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Filled Days</p>
+            <p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Filled Hari</p>
           </div>
           <div className="ios-stat text-center py-3">
             <p className="text-lg font-bold text-[var(--accent-red)]">{logbook.total_photos}</p>
@@ -173,13 +265,33 @@ export default function LogbookReviewClient({
             </div>
             <span className="text-[10px] text-[var(--text-tertiary)]">Rendered from DOCX template</span>
           </div>
-          <div className="relative bg-[#f5f5f5]" style={{ minHeight: "70vh" }}>
+          <div className="relative bg-[#f5f5f5] rounded-xl overflow-hidden shadow-inner" style={{ minHeight: "70vh" }}>
+            {iframeLoading && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/90 backdrop-blur-sm">
+                 <div className="w-16 h-16 border-4 border-[#b3000020] border-t-[var(--accent-primary)] rounded-full animate-spin mb-4"></div>
+                 <span className="text-[14px] font-bold text-[var(--text-primary)] mb-2">Menyiapkan Preview...</span>
+                 
+                 {/* Progress Bar Container */}
+                 <div className="w-64 h-2.5 bg-[#f1f5f9] rounded-full overflow-hidden mb-2 relative">
+                   <div 
+                     className="absolute top-0 left-0 h-full bg-[var(--accent-primary)] transition-all duration-300 ease-out"
+                     style={{ width: `${progress}%` }}
+                   />
+                 </div>
+                 
+                 <div className="flex items-center gap-2">
+                   <span className="text-[12px] font-medium text-[var(--accent-primary)] tabular-nums">{progress}%</span>
+                   <span className="text-[11px] text-[var(--text-tertiary)]">Memproses dokumen & mengunduh foto</span>
+                 </div>
+              </div>
+            )}
             <iframe
               src={previewUrl}
-              className="w-full border-0"
+              className={`w-full border-0 transition-opacity duration-300 ${iframeLoading ? 'opacity-0' : 'opacity-100'}`}
               style={{ minHeight: "70vh" }}
               title="Logbook Preview"
               onLoad={(e) => {
+                setIframeLoading(false);
                 // Adjust iframe height to content
                 try {
                   const iframe = e.target as HTMLIFrameElement;
@@ -224,12 +336,31 @@ export default function LogbookReviewClient({
       {/* ── EXPORT MODAL ── */}
       {showExportModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowExportModal(false)} />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !exporting && setShowExportModal(false)} />
           <div className="relative ios-card !p-0 overflow-hidden max-w-[320px] w-full mx-4 animate-in zoom-in-95">
             <div className="px-5 pt-5 pb-2">
               <h3 className="text-[17px] font-bold text-[var(--text-primary)] text-center">Export Logbook</h3>
-              <p className="text-[12px] text-[var(--text-secondary)] text-center mt-1">Pilih format file yang diinginkan</p>
+              <p className="text-[12px] text-[var(--text-secondary)] text-center mt-1">
+                {exporting ? exportPhase : "Pilih format file yang diinginkan"}
+              </p>
             </div>
+
+            {/* Export Progress Bar */}
+            {exporting && (
+              <div className="px-5 pb-2">
+                <div className="w-full h-2 bg-[#f1f5f9] rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[var(--accent-primary)] transition-all duration-300 ease-out rounded-full"
+                    style={{ width: `${exportProgress}%` }}
+                  />
+                </div>
+                <div className="flex justify-between mt-1">
+                  <span className="text-[10px] text-[var(--text-tertiary)]">{exportPhase}</span>
+                  <span className="text-[10px] font-medium text-[var(--accent-primary)] tabular-nums">{exportProgress}%</span>
+                </div>
+              </div>
+            )}
+
             <div className="px-5 pb-5 space-y-2.5">
               <button
                 onClick={() => handleExport("pdf")}
@@ -246,7 +377,7 @@ export default function LogbookReviewClient({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                 )}
-                {exporting === "pdf" ? "Menyiapkan PDF..." : "Export as PDF"}
+                {exporting === "pdf" ? `${exportPhase} ${exportProgress}%` : "Export as PDF"}
               </button>
               <button
                 onClick={() => handleExport("docx")}
@@ -263,11 +394,12 @@ export default function LogbookReviewClient({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 )}
-                {exporting === "docx" ? "Menyiapkan DOCX..." : "Export as DOCX"}
+                {exporting === "docx" ? `${exportPhase} ${exportProgress}%` : "Export as DOCX"}
               </button>
               <button
                 onClick={() => setShowExportModal(false)}
-                className="w-full !py-2.5 text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-center"
+                disabled={exporting !== null}
+                className="w-full !py-2.5 text-[12px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors text-center disabled:opacity-40"
               >
                 Cancel
               </button>

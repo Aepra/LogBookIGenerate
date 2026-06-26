@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -65,11 +66,11 @@ export default function ActivityClient({
   };
 
   return (
-    <div className="max-w-[700px] mx-auto px-4 sm:px-6 py-2 sm:py-3">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 sm:py-3">
       {/* Back */}
       <Link
         href={`/logbook/${activity.logbook_id}`}
-        className="inline-flex items-center gap-1 text-[12px] text-[var(--accent-blue)] font-medium mb-3 hover:opacity-80 transition-opacity"
+        className="inline-flex items-center gap-1 text-[12px] text-[var(--accent-primary)] font-medium mb-3 hover:opacity-80 transition-opacity"
       >
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -78,9 +79,10 @@ export default function ActivityClient({
       </Link>
 
       {/* Activity Card */}
-      <div className="ios-card p-3.5 mb-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="ios-card p-4">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3 mb-2">
           <div className="flex-1 min-w-0">
             <h1 className="text-[16px] font-bold text-[var(--text-primary)] tracking-tight mb-0.5">
               {activity.title}
@@ -92,7 +94,7 @@ export default function ActivityClient({
           <div className="flex-shrink-0 flex items-center gap-1">
             <Link
               href={`/activity/${activity.id}/edit`}
-              className="text-[11px] text-[var(--accent-blue)] font-medium px-2 py-1 rounded-lg hover:bg-[rgba(37,99,235,0.08)] transition-colors"
+              className="text-[11px] text-[var(--accent-primary)] font-medium px-2 py-1 rounded-lg hover:bg-[#b3000010] transition-colors"
             >
               Edit
             </Link>
@@ -137,19 +139,21 @@ export default function ActivityClient({
 
       {/* Photos */}
       {activity.photos && activity.photos.length > 0 && (
-        <div className="ios-card p-3.5">
-          <h3 className="text-[12px] font-semibold text-[var(--text-primary)] mb-2">
+        <div className="ios-card p-4">
+          <h3 className="text-[13px] font-semibold text-[var(--text-primary)] mb-3">
             Foto: ({activity.photos.length})
           </h3>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-2 gap-2">
             {activity.photos.map((photo) => (
-              <div key={photo.id} className="aspect-square rounded-lg overflow-hidden bg-[var(--fill-secondary)]">
+              <div key={photo.id} className="relative aspect-square rounded-lg overflow-hidden bg-[var(--fill-secondary)]">
                 {photo.thumbnail_url ? (
-                  <img
+                  <Image
                     src={photo.thumbnail_url}
                     alt={photo.file_name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 50vw, 33vw"
+                    unoptimized
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
@@ -163,6 +167,7 @@ export default function ActivityClient({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

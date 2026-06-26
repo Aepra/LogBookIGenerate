@@ -98,22 +98,29 @@ export async function getPhotosByActivityIds(
 ): Promise<Map<string, PhotoRecord[]>> {
   if (activityIds.length === 0) return new Map();
 
-  const { data, error } = await supabaseAdmin
-    .from("photos")
-    .select("*")
-    .in("activity_id", activityIds)
-    .order("created_at", { ascending: true });
-
-  if (error || !data) {
-    console.error("[Photo Service] Gagal mengambil batch foto:", error?.message);
-    return new Map();
-  }
-
   const grouped = new Map<string, PhotoRecord[]>();
-  for (const photo of data as PhotoRecord[]) {
-    const existing = grouped.get(photo.activity_id) || [];
-    existing.push(photo);
-    grouped.set(photo.activity_id, existing);
+  
+  // Chunk the activityIds to avoid URL length limits
+  const chunkSize = 20;
+  for (let i = 0; i < activityIds.length; i += chunkSize) {
+    const chunk = activityIds.slice(i, i + chunkSize);
+    
+    const { data, error } = await supabaseAdmin
+      .from("photos")
+      .select("*")
+      .in("activity_id", chunk)
+      .order("created_at", { ascending: true });
+
+    if (error || !data) {
+      console.error("[Photo Service] Gagal mengambil batch foto (chunk):", error?.message);
+      continue; // keep going with other chunks
+    }
+
+    for (const photo of data as PhotoRecord[]) {
+      const existing = grouped.get(photo.activity_id) || [];
+      existing.push(photo);
+      grouped.set(photo.activity_id, existing);
+    }
   }
 
   return grouped;

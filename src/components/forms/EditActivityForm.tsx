@@ -32,12 +32,12 @@ export default function EditActivityForm({ activity }: EditActivityFormProps) {
     setError(null);
 
     if (!title.trim()) {
-      setError("Title is required");
+      setError("Judul wajib diisi");
       return;
     }
 
     if (!activityDate) {
-      setError("Date is required");
+      setError("Tanggal wajib diisi");
       return;
     }
 
@@ -62,7 +62,7 @@ export default function EditActivityForm({ activity }: EditActivityFormProps) {
       router.push(`/logbook/${activity.logbook_id}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {
       setLoading(false);
     }
@@ -106,7 +106,7 @@ export default function EditActivityForm({ activity }: EditActivityFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="startTime" className="block text-[14px] font-medium text-[var(--text-primary)] mb-1.5">
-            Start Time <span className="text-[var(--text-tertiary)]">(optional)</span>
+            Waktu Mulai <span className="text-[var(--text-tertiary)]">(optional)</span>
           </label>
           <input
             id="startTime"
@@ -119,7 +119,7 @@ export default function EditActivityForm({ activity }: EditActivityFormProps) {
         </div>
         <div>
           <label htmlFor="endTime" className="block text-[14px] font-medium text-[var(--text-primary)] mb-1.5">
-            End Time <span className="text-[var(--text-tertiary)]">(optional)</span>
+            Waktu Selesai <span className="text-[var(--text-tertiary)]">(optional)</span>
           </label>
           <input
             id="endTime"

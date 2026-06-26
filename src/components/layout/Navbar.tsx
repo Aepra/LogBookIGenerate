@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 interface NavbarProps {
@@ -22,32 +23,32 @@ export default function Navbar({ user }: NavbarProps) {
   const linkClass = (path: string) =>
     `text-sm font-medium transition-all duration-200 ${
       isActive(path)
-        ? "text-[var(--accent-blue)]"
-        : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+        ? "text-[var(--accent-primary)] border-b-2 border-[var(--accent-primary)] pb-[13px] pt-[15px]"
+        : "text-[var(--text-secondary)] hover:text-[var(--accent-primary)] pb-[15px] pt-[15px]"
     }`;
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-[rgba(0,0,0,0.06)] hidden md:block">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="flex items-center justify-between h-[52px]">
+    <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[rgba(0,0,0,0.08)] hidden md:block shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+        <div className="flex items-center justify-between h-[60px]">
           {/* Left: Logo + Navigation */}
           <div className="flex items-center gap-8">
             <Link
               href="/"
-              className="text-[17px] font-semibold text-[var(--text-primary)] tracking-tight"
+              className="text-[19px] font-bold text-[var(--accent-primary)] tracking-tight flex items-center gap-2"
             >
-              LogBook.ID
+              Riwaya'
             </Link>
             <div className="flex items-center gap-5">
               <Link href="/" className={linkClass("/")}>
-                Home
+                Beranda
               </Link>
               <Link href="/logbook" className={linkClass("/logbook")}>
                 Logbook
               </Link>
               {user && (
                 <Link href="/profile" className={linkClass("/profile")}>
-                  Profile
+                  Profil
                 </Link>
               )}
             </div>
@@ -59,23 +60,26 @@ export default function Navbar({ user }: NavbarProps) {
               <>
                 <Link
                   href="/logbook/new"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[var(--accent-blue)] text-white text-sm font-semibold rounded-xl hover:opacity-90 active:scale-[0.98] transition-all duration-200"
+                  className="ios-btn-primary flex items-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                   </svg>
-                  Create Logbook
+                  Buat Logbook
                 </Link>
                 <Link href="/profile" className="flex-shrink-0">
                   {user.image ? (
-                    <img
-                      src={user.image}
-                      alt={user.name || "Avatar"}
-                      className="w-8 h-8 rounded-full ring-1.5 ring-[rgba(0,0,0,0.08)] hover:ring-[var(--accent-blue)] transition-all duration-200"
-                    />
+                    <div className="relative w-9 h-9 rounded-full ring-2 ring-[var(--card-border)] hover:ring-[var(--accent-primary)] transition-all duration-200 overflow-hidden">
+                      <Image
+                        src={user.image}
+                        alt={user.name || "Avatar"}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-[rgba(0,122,255,0.1)] text-[var(--accent-blue)] flex items-center justify-center text-sm font-semibold ring-1.5 ring-[rgba(0,0,0,0.08)] hover:ring-[var(--accent-blue)] transition-all duration-200">
-                      {(user.name || "U")[0]}
+                    <div className="w-9 h-9 rounded-full bg-[#f1f5f9] text-[var(--accent-primary)] flex items-center justify-center text-sm font-semibold ring-2 ring-[var(--card-border)] hover:ring-[var(--accent-primary)] transition-all duration-200">
+                      {(user.name || "U")[0].toUpperCase()}
                     </div>
                   )}
                 </Link>
@@ -83,9 +87,9 @@ export default function Navbar({ user }: NavbarProps) {
             ) : (
               <Link
                 href="/api/auth/signin"
-                className="px-5 py-2 text-sm font-semibold text-white bg-[var(--accent-blue)] rounded-xl hover:opacity-90 active:scale-[0.98] transition-all duration-200"
+                className="ios-btn-primary"
               >
-                Sign In
+                Masuk
               </Link>
             )}
           </div>

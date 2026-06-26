@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     // Validasi input
     if (!title || !title.trim()) {
       return NextResponse.json(
-        { error: "Title is required" },
+        { error: "Judul wajib diisi" },
         { status: 400 }
       );
     }

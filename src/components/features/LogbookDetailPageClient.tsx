@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { UserProfile } from "@/lib/user";
 
@@ -93,7 +94,6 @@ export default function LogbookDetailPageClient({
     setExporting(format);
     try {
       const url = `/api/export/logbook/download?logbook_id=${logbook.id}&format=${format}`;
-      // Trigger download by navigating
       window.open(url, "_blank");
     } catch {
       setMessage({ type: "error", text: "Gagal mengexport logbook." });
@@ -101,6 +101,11 @@ export default function LogbookDetailPageClient({
       setExporting(null);
       setShowExportModal(false);
     }
+  };
+
+  const handlePreview = () => {
+    const url = `/logbook/${logbook.id}/review`;
+    window.open(url, "_blank");
   };
   const [form, setForm] = useState({
     title: logbook.title || "",
@@ -152,16 +157,16 @@ export default function LogbookDetailPageClient({
   );
 
   return (
-    <div className="max-w-[700px] mx-auto px-4 sm:px-6 py-5 sm:py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
       {/* Back link */}
       <Link
         href="/logbook"
-        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--accent-blue)] mb-5 hover:opacity-80 transition-opacity"
+        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--accent-primary)] mb-5 hover:opacity-80 transition-opacity"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-        Back to Logbooks
+        Kembali ke Logbook
       </Link>
 
       {/* Toast message */}
@@ -175,14 +180,14 @@ export default function LogbookDetailPageClient({
       <div className="ios-card overflow-hidden mb-4">
         {/* ===== HEADER SECTION ===== */}
         <div className="px-5 pt-5 pb-4">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold text-[var(--text-primary)] break-words">{logbook.title}</h1>
               {logbook.description && (
                 <p className="text-[13px] text-[var(--text-secondary)] mt-1 leading-relaxed break-words">{logbook.description}</p>
               )}
             </div>
-            <div className="flex items-center gap-1.5 flex-shrink-0 pt-0.5">
+            <div className="flex items-center flex-wrap gap-1.5 flex-shrink-0 pt-0.5">
               <button
                 onClick={() => { setIsEditing(!isEditing); setMessage(null); }}
                 className="ios-btn-primary !py-1.5 !px-2.5 text-[11px] inline-flex items-center gap-1"
@@ -202,6 +207,16 @@ export default function LogbookDetailPageClient({
                 </svg>
                 Preview
               </Link>
+              <div className="w-px h-5 bg-[var(--card-border)] mx-1" />
+              <button
+                onClick={() => setShowExportModal(true)}
+                className="ios-btn-primary !py-1.5 !px-3 text-[11px] inline-flex items-center gap-1.5 bg-[#16a34a] hover:bg-[#15803d]"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Export
+              </button>
             </div>
           </div>
 
@@ -215,7 +230,7 @@ export default function LogbookDetailPageClient({
                 {formatShortDate(logbook.start_date)} — {formatShortDate(logbook.end_date)}
               </span>
             )}
-            <span className="text-[10px] font-medium text-[var(--accent-blue)] bg-[rgba(37,99,235,0.08)] px-2 py-0.5 rounded-full uppercase tracking-wider">{logbook.type}</span>
+            <span className="text-[10px] font-medium text-[var(--accent-primary)] bg-[#b3000010] px-2 py-0.5 rounded-full uppercase tracking-wider">{logbook.type}</span>
             {logbook.status && (
               <span className="text-[10px] font-medium text-[var(--accent-green)] bg-[rgba(34,197,94,0.08)] px-2 py-0.5 rounded-full capitalize">{logbook.status}</span>
             )}
@@ -226,10 +241,12 @@ export default function LogbookDetailPageClient({
         <div className="px-5 py-4 border-t border-[var(--card-border)]">
           <div className="flex items-center gap-3">
             {user.avatar ? (
-              <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full ring-2 ring-[var(--card-border)] flex-shrink-0" />
+            <div className="relative w-10 h-10 rounded-full ring-2 ring-[var(--card-border)] flex-shrink-0 overflow-hidden">
+              <Image src={user.avatar} alt={user.name} fill className="object-cover" sizes="40px" unoptimized />
+            </div>
             ) : (
-              <div className="w-10 h-10 rounded-full bg-[rgba(37,99,235,0.1)] text-[var(--accent-blue)] flex items-center justify-center text-base font-medium ring-2 ring-[var(--card-border)] flex-shrink-0">
-                {(user.name || "U")[0]}
+              <div className="w-10 h-10 rounded-full bg-[#f1f5f9] text-[var(--accent-primary)] flex items-center justify-center text-base font-medium ring-2 ring-[var(--card-border)] flex-shrink-0">
+                {(user.name || "U")[0].toUpperCase()}
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -290,7 +307,7 @@ export default function LogbookDetailPageClient({
               )}
               {logbook.location && (
                 <div>
-                  <span className="text-[8px] text-[var(--text-tertiary)] uppercase tracking-wider font-medium">Location</span>
+                  <span className="text-[8px] text-[var(--text-tertiary)] uppercase tracking-wider font-medium">Lokasi</span>
                   <p className="text-[12px] text-[var(--text-primary)] font-medium break-words">{logbook.location}</p>
                 </div>
               )}
@@ -313,8 +330,8 @@ export default function LogbookDetailPageClient({
 
       {/* ── STATS GRID ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-4">
-        <div className="ios-stat text-center py-3.5"><p className="text-lg font-bold text-[var(--accent-blue)]">{logbook.total_activities}</p><p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Activities</p></div>
-        <div className="ios-stat text-center py-3.5"><p className="text-lg font-bold text-[var(--accent-yellow)]">{logbook.filled_days}</p><p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Filled Days</p></div>
+        <div className="ios-stat text-center py-3.5"><p className="text-lg font-bold text-[var(--accent-primary)]">{logbook.total_activities}</p><p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Aktivitas</p></div>
+        <div className="ios-stat text-center py-3.5"><p className="text-lg font-bold text-[var(--accent-yellow)]">{logbook.filled_days}</p><p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Filled Hari</p></div>
         <div className="ios-stat text-center py-3.5"><p className="text-lg font-bold text-[var(--accent-red)]">{totalPhotos}</p><p className="text-[10px] text-[var(--text-secondary)] mt-0.5">Photos</p></div>
         <div className="ios-stat text-center py-3.5">
           <p className={`text-lg font-bold ${logbook.progress_percent >= 100 ? "text-[var(--accent-green)]" : "text-[var(--accent-yellow)]"}`}>{logbook.progress_percent}%</p>
@@ -353,7 +370,7 @@ export default function LogbookDetailPageClient({
           <p className="text-[12px] text-[var(--text-secondary)]">Start logging your activities for this logbook.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {sortedDates.map((date) => (
             <div key={date}>
               <div className="flex items-center gap-2 mb-1.5">
@@ -388,15 +405,15 @@ export default function LogbookDetailPageClient({
                         <div className="w-px self-stretch bg-[var(--card-border)] flex-shrink-0 min-h-[24px]" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-blue)] transition-colors truncate">{activity.title}</p>
+                        <p className="text-[13px] font-medium text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors truncate">{activity.title}</p>
                         {activity.description && (
                           <p className="text-[11px] text-[var(--text-secondary)] line-clamp-1 mt-0.5">{activity.description}</p>
                         )}
                         {activity.photos.length > 0 && (
                           <div className="flex items-center gap-1 mt-1">
                             {activity.photos.slice(0, 3).map((photo) => (
-                              <div key={photo.id} className="w-5 h-5 rounded bg-[var(--fill-secondary)] overflow-hidden border border-[var(--card-border)] flex-shrink-0">
-                                <img src={photo.thumbnail_url} alt={photo.file_name} className="w-full h-full object-cover" loading="lazy" />
+                              <div key={photo.id} className="relative w-5 h-5 rounded bg-[var(--fill-secondary)] overflow-hidden border border-[var(--card-border)] flex-shrink-0">
+                                <Image src={photo.thumbnail_url} alt={photo.file_name} fill className="object-cover" sizes="20px" unoptimized />
                               </div>
                             ))}
                             {activity.photos.length > 3 && (

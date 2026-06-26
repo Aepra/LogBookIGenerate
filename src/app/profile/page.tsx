@@ -16,7 +16,7 @@ export default async function ProfilePage() {
             href="/api/auth/signin"
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
           >
-            Sign in with Google
+            Masuk dengan Google
           </a>
         </div>
       </div>

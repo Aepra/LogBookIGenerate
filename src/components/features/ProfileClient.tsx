@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { UserProfile } from "@/lib/user";
 
 function formatDate(dateStr: string) {
@@ -50,12 +51,12 @@ export default function ProfileClient({ user }: { user: UserProfile }) {
   };
 
   return (
-    <div className="max-w-[700px] mx-auto px-4 sm:px-6 py-5 sm:py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-[28px] sm:text-[32px] font-bold text-[var(--text-primary)] tracking-tight">Profile</h1>
-          <p className="text-[14px] text-[var(--text-secondary)] mt-0.5">Your account and academic information</p>
+          <h1 className="text-[28px] sm:text-[32px] font-bold text-[var(--text-primary)] tracking-tight">Profil</h1>
+          <p className="text-[14px] text-[var(--text-secondary)] mt-0.5">Informasi akun dan akademik Anda</p>
         </div>
         <button
           onClick={() => {
@@ -67,7 +68,7 @@ export default function ProfileClient({ user }: { user: UserProfile }) {
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
           </svg>
-          {isEditing ? "Cancel" : "Edit"}
+          {isEditing ? "Batal" : "Edit"}
         </button>
       </div>
 
@@ -86,7 +87,9 @@ export default function ProfileClient({ user }: { user: UserProfile }) {
       <div className="ios-card p-5 mb-4">
         <div className="flex items-center gap-4">
           {user.avatar ? (
-            <img src={user.avatar} alt={user.name} className="w-16 h-16 rounded-full ring-2 ring-[var(--card-border)]" />
+            <div className="relative w-16 h-16 rounded-full overflow-hidden ring-2 ring-[var(--card-border)]">
+              <Image src={user.avatar} alt={user.name || "User"} fill className="object-cover" />
+            </div>
           ) : (
             <div className="w-16 h-16 rounded-full bg-[rgba(37,99,235,0.1)] text-[var(--accent-blue)] flex items-center justify-center text-2xl font-medium ring-2 ring-[var(--card-border)]">
               {(user.name || "U")[0]}
@@ -96,7 +99,7 @@ export default function ProfileClient({ user }: { user: UserProfile }) {
             <h2 className="text-[18px] font-bold text-[var(--text-primary)]">{user.name}</h2>
             <p className="text-[13px] text-[var(--text-secondary)]">{user.email}</p>
             <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">
-              Member since {formatDate(user.created_at)}
+              Bergabung sejak {formatDate(user.created_at)}
             </p>
           </div>
         </div>

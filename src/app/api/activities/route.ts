@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { createActivity, getActivitiesGroupedByDate } from "@/services/activity.service";
 import { getUserIdByEmail } from "@/lib/user";
 import { supabaseAdmin } from "@/lib/supabase-server";
+import { invalidateExportCache } from "@/lib/invalidateExportCache";
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     if (!title || !title.trim()) {
       return NextResponse.json(
-        { error: "Title is required" },
+        { error: "Judul wajib diisi" },
         { status: 400 }
       );
     }
@@ -136,6 +137,9 @@ export async function POST(request: NextRequest) {
       description: description?.trim() || "",
       obstacle: obstacle?.trim() || "",
     });
+
+    // Invalidate export cache since data changed
+    invalidateExportCache(logbook_id);
 
     return NextResponse.json({ activity }, { status: 201 });
   } catch (error) {

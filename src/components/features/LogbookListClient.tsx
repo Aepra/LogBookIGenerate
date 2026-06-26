@@ -92,7 +92,7 @@ export default function LogbookListClient({
   };
 
   const totalActivities = logbooks.reduce((s, l) => s + l.total_activities, 0);
-  const totalDays = logbooks.reduce((s, l) => s + l.total_days, 0);
+  const totalHari = logbooks.reduce((s, l) => s + l.total_days, 0);
   const totalPhotos = logbooks.reduce((s, l) => s + l.total_photos, 0);
 
   return (
@@ -101,18 +101,18 @@ export default function LogbookListClient({
       <div className="ios-card p-3.5 mb-5">
         <div className="flex items-center justify-around gap-2 text-center">
           <div>
-            <p className="text-[18px] font-bold text-[var(--accent-blue)]">{logbooks.length}</p>
-            <p className="text-[9px] text-[var(--text-secondary)] mt-0.5">Logbooks</p>
+            <p className="text-[18px] font-bold text-[var(--accent-primary)]">{logbooks.length}</p>
+            <p className="text-[9px] text-[var(--text-secondary)] mt-0.5">Logbook</p>
           </div>
           <div className="w-px h-8 bg-[var(--card-border)]" />
           <div>
             <p className="text-[18px] font-bold text-[var(--accent-green)]">{totalActivities}</p>
-            <p className="text-[9px] text-[var(--text-secondary)] mt-0.5">Activities</p>
+            <p className="text-[9px] text-[var(--text-secondary)] mt-0.5">Aktivitas</p>
           </div>
           <div className="w-px h-8 bg-[var(--card-border)]" />
           <div>
-            <p className="text-[18px] font-bold text-[var(--accent-yellow)]">{totalDays}</p>
-            <p className="text-[9px] text-[var(--text-secondary)] mt-0.5">Days</p>
+            <p className="text-[18px] font-bold text-[var(--accent-yellow)]">{totalHari}</p>
+            <p className="text-[9px] text-[var(--text-secondary)] mt-0.5">Hari</p>
           </div>
           <div className="w-px h-8 bg-[var(--card-border)]" />
           <div>
@@ -149,7 +149,7 @@ export default function LogbookListClient({
         ))}
         <Link
           href="/logbook/new"
-          className="ios-pill !px-2 !py-1 text-[11px] font-semibold text-[var(--accent-blue)] bg-[rgba(37,99,235,0.08)] hover:bg-[rgba(37,99,235,0.15)] transition-colors inline-flex items-center gap-0.5 ml-auto"
+          className="ios-pill !px-2 !py-1 text-[11px] font-semibold text-[var(--accent-primary)] bg-[#b3000015] hover:bg-[#b3000025] transition-colors inline-flex items-center gap-0.5 ml-auto"
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -182,20 +182,20 @@ export default function LogbookListClient({
           )}
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((logbook) => {
             const pct = logbook.progress_percent;
             const progClass = getProgressClass(pct);
 
             return (
               <div key={logbook.id} className="ios-card">
-                <Link href={`/logbook/${logbook.id}`} className="block p-3.5">
+                <Link href={`/logbook/${logbook.id}`} prefetch={true} className="block p-3.5">
                   {/* Header: title + type/status badges + actions */}
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-[14px] font-bold text-[var(--text-primary)] truncate">{logbook.title}</h3>
-                        <span className="text-[9px] font-medium text-[var(--accent-blue)] bg-[rgba(37,99,235,0.06)] px-1.5 py-0.5 rounded uppercase leading-none">{logbook.type}</span>
+                        <span className="text-[9px] font-medium text-[var(--accent-primary)] bg-[#b3000010] px-1.5 py-0.5 rounded uppercase leading-none">{logbook.type}</span>
                         {logbook.status && (
                           <span className={`text-[9px] font-medium capitalize px-1.5 py-0.5 rounded leading-none ${
                             logbook.status === "completed" ? "text-[var(--accent-green)] bg-[rgba(34,197,94,0.06)]" :
@@ -206,16 +206,6 @@ export default function LogbookListClient({
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          router.push(`/logbook/${logbook.id}/detail`);
-                        }}
-                        className="text-[9px] font-medium text-[var(--accent-blue)] bg-[rgba(37,99,235,0.06)] px-1.5 py-0.5 rounded hover:bg-[rgba(37,99,235,0.12)] transition-colors leading-none"
-                      >
-                        Details
-                      </button>
                       <button
                         onClick={(e) => handleDelete(logbook.id, e)}
                         disabled={deletingId === logbook.id}

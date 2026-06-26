@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f9fb;
-  --foreground: #111827;
+  --background: #f4f6f9; /* Slightly cooler professional gray */
+  --foreground: #1e293b;
   --card-background: #ffffff;
-  --card-border: #e5e7eb;
+  --card-border: #e2e8f0;
+  --accent-primary: #b30000; /* Unhas Maroon */
+  --accent-primary-hover: #8e0000;
   --accent-blue: #2563eb;
-  --accent-green: #22c55e;
-  --accent-yellow: #f59e0b;
-  --accent-red: #ef4444;
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --text-tertiary: #9ca3af;
-  --fill-secondary: #f3f4f6;
-  --system-background: #f8f9fb;
+  --accent-green: #16a34a;
+  --accent-yellow: #d97706;
+  --accent-red: #dc2626;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --fill-secondary: #f1f5f9;
+  --system-background: #f8fafc;
 }
 
 @theme inline {
@@ -31,40 +33,42 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* iOS-style card */
+/* Modern Academic Card */
 .ios-card {
   background: var(--card-background);
-  border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  border: 0.5px solid var(--card-border);
-  transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025);
+  border: 1px solid var(--card-border);
+  transition: all 0.2s ease-in-out;
 }
 
 .ios-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.035);
+  border-color: #cbd5e1;
 }
 
-/* iOS-style button */
+/* Primary Button */
 .ios-btn-primary {
-  background: var(--accent-blue);
+  background: var(--accent-primary);
   color: white;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 600;
   font-size: 14px;
-  padding: 12px 20px;
-  transition: all 0.2s;
+  padding: 10px 18px;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(179, 0, 0, 0.2);
 }
 
 .ios-btn-primary:hover {
-  opacity: 0.92;
+  background: var(--accent-primary-hover);
+  box-shadow: 0 4px 6px rgba(179, 0, 0, 0.25);
 }
 
 .ios-btn-primary:active {
-  opacity: 0.85;
-  transform: scale(0.96);
+  transform: translateY(1px);
 }
 
-/* iOS-style pill filter */
+/* Pill filter */
 .ios-pill {
   padding: 6px 16px;
   border-radius: 100px;
@@ -72,19 +76,20 @@ body {
   font-weight: 500;
   transition: all 0.2s;
   cursor: pointer;
-  border: 0.5px solid var(--card-border);
+  border: 1px solid var(--card-border);
   background: var(--card-background);
   color: var(--text-secondary);
 }
 
 .ios-pill:hover {
   background: var(--fill-secondary);
+  border-color: #cbd5e1;
 }
 
 .ios-pill.active {
-  background: var(--accent-blue);
+  background: var(--accent-primary);
   color: white;
-  border-color: var(--accent-blue);
+  border-color: var(--accent-primary);
 }
 
 /* Progress bar */
@@ -119,27 +124,49 @@ body {
   background: var(--card-border);
 }
 
-/* iOS-style input */
+/* Input Fields */
 .ios-input {
   width: 100%;
-  padding: 14px 16px;
-  background: var(--fill-secondary);
-  border-radius: 12px;
-  font-size: 15px;
+  padding: 10px 14px;
+  background: var(--card-background);
+  border-radius: 8px;
+  font-size: 14px;
   color: var(--text-primary);
-  border: 0.5px solid transparent;
+  border: 1px solid var(--card-border);
   outline: none;
   transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .ios-input:focus {
-  background: var(--card-background);
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(179, 0, 0, 0.12);
 }
 
 .ios-input::placeholder {
   color: var(--text-tertiary);
+}
+
+/* Select Menu */
+.ios-select {
+  appearance: none;
+  width: 100%;
+  padding: 10px 14px;
+  padding-right: 36px;
+  background: var(--card-background) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 9l4-4 4 4m0 6l-4 4-4-4'/%3E%3C/svg%3E") no-repeat right 12px center;
+  background-size: 16px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
+  border: 1px solid var(--card-border);
+  outline: none;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.ios-select:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(179, 0, 0, 0.12);
 }
 
 /* iOS-style search */
@@ -156,8 +183,8 @@ body {
 
 .ios-search:focus {
   background: var(--card-background);
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(179, 0, 0, 0.12);
 }
 
 .ios-search::placeholder {
@@ -185,7 +212,7 @@ body {
 
 .ios-badge-blue {
   background: rgba(37, 99, 235, 0.08);
-  color: var(--accent-blue);
+  color: var(--accent-primary);
 }
 
 .ios-badge-green {

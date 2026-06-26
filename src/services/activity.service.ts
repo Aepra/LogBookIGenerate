@@ -434,7 +434,7 @@ export async function getRecentActivities(
   }));
 }
 
-export async function getTotalDays(logbookId: string): Promise<number> {
+export async function getTotalHari(logbookId: string): Promise<number> {
   const { data, error } = await supabaseAdmin
     .from("activities")
     .select("activity_date")
@@ -458,7 +458,7 @@ export async function getTotalDays(logbookId: string): Promise<number> {
  * Previously did 2 queries (logbooks + activities). Still needs 2 queries
  * since Supabase doesn't support subqueries in same select, but kept minimal.
  */
-export async function getTotalDaysAll(userId: string): Promise<number> {
+export async function getTotalHariAll(userId: string): Promise<number> {
   const { data: logbooks } = await supabaseAdmin
     .from("logbooks")
     .select("id")
@@ -507,18 +507,25 @@ export async function getTotalPhotosAll(userId: string): Promise<number> {
 
   const activityIds = activities.map((a) => a.id);
 
-  // Count photos for those activities
-  const { count, error } = await supabaseAdmin
-    .from("photos")
-    .select("*", { count: "exact", head: true })
-    .in("activity_id", activityIds);
-
-  if (error) {
-    console.error("[Activity Service] Gagal menghitung foto:", error.message);
-    return 0;
+  // Count photos for those activities (chunked)
+  const CHUNK_SIZE = 40;
+  let totalPhotos = 0;
+  
+  for (let i = 0; i < activityIds.length; i += CHUNK_SIZE) {
+    const chunk = activityIds.slice(i, i + CHUNK_SIZE);
+    const { count, error } = await supabaseAdmin
+      .from("photos")
+      .select("*", { count: "exact", head: true })
+      .in("activity_id", chunk);
+      
+    if (error) {
+      console.error("[Activity Service] Gagal menghitung foto:", error.message);
+    } else if (count) {
+      totalPhotos += count;
+    }
   }
 
-  return count || 0;
+  return totalPhotos;
 }
 
 export async function getActivitiesGroupedByDate(

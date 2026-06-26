@@ -18,7 +18,7 @@ export default async function EditActivityPage({
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Sign In Required</h1>
           <p className="text-gray-500 mb-6">Please sign in to edit this activity.</p>
           <a href="/api/auth/signin" className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors">
-            Sign in with Google
+            Masuk dengan Google
           </a>
         </div>
       </div>
@@ -46,10 +46,10 @@ export default async function EditActivityPage({
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
         <div className="text-center max-w-md">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Activity Not Found</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Aktivitas Tidak Ditemukan</h1>
           <p className="text-gray-500 mb-6">The activity you are looking for does not exist.</p>
           <a href="/logbook" className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors">
-            Back to Logbooks
+            Kembali ke Logbook
           </a>
         </div>
       </div>
@@ -71,7 +71,7 @@ export default async function EditActivityPage({
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Forbidden</h1>
           <p className="text-gray-500 mb-6">You don't have permission to edit this activity.</p>
           <a href="/logbook" className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors">
-            Back to Logbooks
+            Kembali ke Logbook
           </a>
         </div>
       </div>
@@ -79,7 +79,7 @@ export default async function EditActivityPage({
   }
 
   return (
-    <div className="max-w-[700px] mx-auto px-4 sm:px-6 py-4 sm:py-6">
+    <div className="max-w-7xl md:px-8 mx-auto px-4 sm:px-6 py-4 sm:py-6">
       <div className="mb-5">
         <a
           href={`/logbook/${logbook.id}`}
@@ -88,9 +88,9 @@ export default async function EditActivityPage({
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back to {logbook.title}
+          Kembali ke {logbook.title}
         </a>
-        <h1 className="text-[28px] sm:text-[32px] font-bold text-[var(--text-primary)] tracking-tight">Edit Activity</h1>
+        <h1 className="text-[28px] sm:text-[32px] font-bold text-[var(--text-primary)] tracking-tight">Edit Aktivitas</h1>
         <p className="text-[14px] text-[var(--text-secondary)] mt-0.5">
           Update the activity details below.
         </p>

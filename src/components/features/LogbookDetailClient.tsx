@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 interface LogbookWithStats {
@@ -59,11 +60,11 @@ export default function LogbookDetailClient({
   logbook: LogbookWithStats;
   activities: Activity[];
 }) {
-  const [openDays, setOpenDays] = useState<Set<string>>(new Set());
+  const [openHari, setOpenHari] = useState<Set<string>>(new Set());
   const [openActivities, setOpenActivities] = useState<Set<string>>(new Set());
 
   const toggleDay = (date: string) => {
-    setOpenDays((prev) => {
+    setOpenHari((prev) => {
       const next = new Set(prev);
       if (next.has(date)) next.delete(date);
       else next.add(date);
@@ -81,11 +82,11 @@ export default function LogbookDetailClient({
   };
 
   const collapseAll = () => {
-    setOpenDays(new Set());
+    setOpenHari(new Set());
     setOpenActivities(new Set());
   };
 
-  const hasAnyOpen = openDays.size > 0 || openActivities.size > 0;
+  const hasAnyOpen = openHari.size > 0 || openActivities.size > 0;
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + "T00:00:00Z");
@@ -121,11 +122,11 @@ export default function LogbookDetailClient({
   const progColor = getProgressColor(pct);
 
   return (
-    <div className="max-w-[720px] mx-auto px-4 sm:px-6 py-5 sm:py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 sm:py-8">
       {/* Back */}
       <Link
         href="/logbook"
-        className="group inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--accent-blue)] mb-5 hover:opacity-80 transition-all"
+        className="group inline-flex items-center gap-1.5 text-[13px] font-medium text-[var(--accent-primary)] mb-5 hover:opacity-80 transition-all"
       >
         <svg className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -136,22 +137,22 @@ export default function LogbookDetailClient({
       {/* ── Hero Card (compact) ── */}
       <div className="ios-card p-3.5 mb-5">
         {/* Row 1: Title (kiri) + Stats (kanan) */}
-        <div className="flex items-start gap-3 mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 mb-3">
           <div className="flex-1 min-w-0">
-            <h1 className="text-[17px] font-bold text-[var(--text-primary)] tracking-tight truncate">{logbook.title}</h1>
+            <h1 className="text-[17px] font-bold text-[var(--text-primary)] tracking-tight line-clamp-2 sm:truncate">{logbook.title}</h1>
             {logbook.description && (
-              <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5 line-clamp-1">{logbook.description}</p>
+              <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5 line-clamp-2 sm:line-clamp-1">{logbook.description}</p>
             )}
           </div>
-          {/* Stats inline (kanan) */}
-          <div className="flex items-center gap-2 flex-shrink-0 mt-0.5">
+          {/* Stats inline (bawah/kanan) */}
+          <div className="flex items-center flex-wrap gap-2 flex-shrink-0 sm:mt-0.5 mt-1 bg-[var(--fill-secondary)] sm:bg-transparent px-2 py-1.5 sm:px-0 sm:py-0 rounded-lg">
             <span className="text-[11px] text-[var(--accent-yellow)] font-medium whitespace-nowrap">
               <svg className="w-3 h-3 inline mr-0.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               {logbook.total_days}
             </span>
-            <span className="text-[11px] text-[var(--accent-blue)] font-medium whitespace-nowrap">
+            <span className="text-[11px] text-[var(--accent-primary)] font-medium whitespace-nowrap">
               <svg className="w-3 h-3 inline mr-0.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
               </svg>
@@ -163,8 +164,15 @@ export default function LogbookDetailClient({
               </svg>
               {logbook.total_photos}
             </span>
-            <div className="w-px h-3 bg-[var(--card-border)]" />
+            <div className="w-px h-3 bg-[var(--card-border)] mx-1" />
             <span className={`text-[11px] font-semibold ${progColor}`}>{pct}%</span>
+            <div className="w-px h-3 bg-[var(--card-border)] mx-1" />
+            <Link
+              href={`/logbook/${logbook.id}/detail`}
+              className="text-[10px] font-medium text-[var(--accent-primary)] bg-[#b3000010] hover:bg-[#b3000020] px-2 py-1 rounded transition-colors whitespace-nowrap"
+            >
+              Logbook Details
+            </Link>
           </div>
         </div>
 
@@ -190,7 +198,7 @@ export default function LogbookDetailClient({
 
       {/* ── Activities Section — Collapse + Add ── */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-[17px] font-semibold text-[var(--text-primary)]">Activities</h2>
+        <h2 className="text-[17px] font-semibold text-[var(--text-primary)]">Aktivitas</h2>
         <div className="flex items-center gap-2">
           {hasAnyOpen && (
             <button
@@ -236,7 +244,7 @@ export default function LogbookDetailClient({
           </Link>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {sortedDates.map(([date, dayActivities]) => (
             <DayDisclosure
               key={date}
@@ -244,7 +252,7 @@ export default function LogbookDetailClient({
               activities={dayActivities}
               count={dayActivities.length}
               logbookId={logbook.id}
-              isOpen={openDays.has(date)}
+              isOpen={openHari.has(date)}
               onToggle={() => toggleDay(date)}
               openActivities={openActivities}
               onToggleActivity={toggleActivity}
@@ -543,8 +551,8 @@ function ActivityDetailCard({ activity, logbookId }: { activity: Activity; logbo
             <span className="text-[9px] font-semibold text-[var(--text-tertiary)] uppercase tracking-[0.05em]">Foto: ({localPhotos.length})</span>
             <div className="flex flex-wrap gap-1 mt-1">
               {localPhotos.map((photo) => (
-                <div key={photo.id} className="w-10 h-10 rounded-lg overflow-hidden bg-[var(--fill-secondary)] border border-[var(--card-border)] flex-shrink-0">
-                  <img src={photo.thumbnail_url || photo.file_url || ""} alt={photo.file_name} className="w-full h-full object-cover" loading="lazy" />
+                <div key={photo.id} className="relative w-10 h-10 rounded-lg overflow-hidden bg-[var(--fill-secondary)] border border-[var(--card-border)] flex-shrink-0">
+                  <Image src={photo.thumbnail_url || photo.file_url || ""} alt={photo.file_name} fill className="object-cover" sizes="40px" unoptimized />
                 </div>
               ))}
             </div>

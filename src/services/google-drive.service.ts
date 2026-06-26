@@ -702,3 +702,116 @@ export async function uploadFileToActivityFolder(params: UploadFileParams): Prom
   trace.log("UPLOAD_DONE", "complete", { fileId, webViewLink: webViewLink || "unknown" });
   return { fileId, webViewLink: webViewLink || "" };
 }
+
+/**
+ * Uploads a DOCX buffer to Google Drive as a temporary Google Doc,
+ * exports it as a PDF buffer, and deletes the temporary file.
+ */
+export async function convertDocxToPdf(
+  trace: TraceContext,
+  accessToken: string,
+  refreshTokenFn: () => Promise<string | null>,
+  docxBuffer: Buffer
+): Promise<Buffer | null> {
+  trace.log("CONVERT_PDF_START", "Uploading temporary DOCX to Drive...");
+
+  const boundary = "docx_pdf_conversion_boundary_" + Date.now();
+  const metadata = JSON.stringify({
+    name: `temp_logbook_conversion_${Date.now()}`,
+    mimeType: "application/vnd.google-apps.document",
+  });
+  
+  const encoder = new TextEncoder();
+  const metaPart = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`;
+  const metaBytes = encoder.encode(metaPart);
+  const mediaHeadBytes = encoder.encode(`--${boundary}\r\nContent-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document\r\n\r\n`);
+  const mediaFootBytes = encoder.encode(`\r\n--${boundary}--`);
+
+  const totalLen = metaBytes.length + mediaHeadBytes.length + docxBuffer.byteLength + mediaFootBytes.length;
+  const body = new Uint8Array(totalLen);
+  let off = 0;
+  body.set(metaBytes, off); off += metaBytes.length;
+  body.set(mediaHeadBytes, off); off += mediaHeadBytes.length;
+  body.set(new Uint8Array(docxBuffer), off); off += docxBuffer.byteLength;
+  body.set(mediaFootBytes, off);
+
+  const uploadResult = await driveFetch(trace, "CONVERT_PDF_UPLOAD", "uploadTempDocx", `${UPLOAD_BASE}/files?uploadType=multipart&fields=id`, {
+    method: "POST",
+    headers: {
+      "Content-Type": `multipart/related; boundary=${boundary}`,
+      "Content-Length": totalLen.toString(),
+    },
+    body,
+    accessToken,
+    refreshToken: refreshTokenFn,
+  });
+
+  if (!uploadResult.ok) {
+    trace.error("CONVERT_PDF_UPLOAD", "failed to upload temp DOCX", { status: uploadResult.status, data: uploadResult.data });
+    return null;
+  }
+
+  const uploadData = uploadResult.data as { id?: string } | null;
+  const fileId = uploadData?.id;
+  if (!fileId) {
+    trace.error("CONVERT_PDF_UPLOAD", "no file ID in response");
+    return null;
+  }
+
+  trace.log("CONVERT_PDF_EXPORT", "Exporting Google Doc as PDF...", { fileId });
+
+  const exportUrl = `${DRIVE_API_BASE}/files/${fileId}/export?mimeType=application/pdf`;
+  
+  let currentToken = accessToken;
+  let pdfBuffer: Buffer | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await fetch(exportUrl, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${currentToken}` },
+      });
+
+      if (response.ok) {
+        const arrayBuffer = await response.arrayBuffer();
+        pdfBuffer = Buffer.from(arrayBuffer);
+        break;
+      }
+
+      if (response.status === 401 && attempt === 0) {
+        trace.warn("CONVERT_PDF_EXPORT", "401 during export, refreshing token...");
+        const newToken = await refreshTokenFn();
+        if (newToken) {
+          currentToken = newToken;
+          continue;
+        }
+      }
+
+      if (response.status === 429 || response.status >= 500) {
+        if (attempt < MAX_RETRIES) {
+          const delay = RETRY_BASE_MS * Math.pow(2, attempt);
+          await sleep(delay);
+          continue;
+        }
+      }
+
+      const errMsg = await response.text();
+      trace.error("CONVERT_PDF_EXPORT", `Export failed with status ${response.status}: ${errMsg}`);
+      break;
+    } catch (err) {
+      trace.error("CONVERT_PDF_EXPORT", `Export fetch error: ${String(err)}`);
+      if (attempt < MAX_RETRIES) {
+        const delay = RETRY_BASE_MS * Math.pow(2, attempt);
+        await sleep(delay);
+        continue;
+      }
+      break;
+    }
+  }
+
+  trace.log("CONVERT_PDF_CLEANUP", "Deleting temporary Google Doc...", { fileId });
+  await deleteDriveFile(trace, currentToken, refreshTokenFn, fileId);
+
+  return pdfBuffer;
+}
+

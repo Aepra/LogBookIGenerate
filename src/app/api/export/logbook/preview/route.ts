@@ -1,8 +1,8 @@
 /**
  * Export Logbook Preview API
  * ============================
- * GET endpoint that generates a logbook as DOCX and converts to HTML preview.
- * Uses the same generation logic as download but returns HTML via mammoth.
+ * GET endpoint that generates a logbook as PDF and serves it inline.
+ * Uses server-side cache to avoid re-generating on repeated requests.
  *
  * Query params:
  *   - logbook_id (required)
@@ -15,9 +15,9 @@ import { getUserIdByEmail, getUserByEmail } from "@/lib/user";
 import { getLogbookById } from "@/services/logbook.service";
 import { getActivitiesByLogbookId } from "@/services/activity.service";
 import { getPhotosByActivityIds } from "@/services/photo.service";
-import { generateLogbookDocx } from "@/services/export-docx.service";
+import { generateLogbookPdf } from "@/services/export-pdf.service";
+import { exportCache } from "@/services/cache/ExportCache";
 import type { PhotoRecord } from "@/services/photo.service";
-import mammoth from "mammoth";
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -34,6 +34,27 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // ── Check cache first ──
+    const cacheKey = `export:${logbookId}:pdf`;
+    
+    const cachedBuffer = exportCache.get(cacheKey);
+    if (cachedBuffer) {
+      console.log(`[Preview API] Cache HIT for logbook ${logbookId.substring(0, 8)}`);
+      return new NextResponse(new Uint8Array(cachedBuffer), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": "inline; filename=\"preview.pdf\"",
+          "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
+          "Content-Length": cachedBuffer.length.toString(),
+          "X-Cache": "HIT",
+        },
+      });
+    }
+
+    console.log(`[Preview API] Cache MISS for logbook ${logbookId.substring(0, 8)}, generating...`);
+    const startTime = performance.now();
+
     const userId = await getUserIdByEmail(session.user.email);
     const userProfile = await getUserByEmail(session.user.email);
 
@@ -70,6 +91,7 @@ export async function GET(request: NextRequest) {
 
     // Get access token for Drive photo fetching
     const accessToken = (session as unknown as { accessToken?: string }).accessToken;
+    const refreshToken = (session as unknown as { refreshToken?: string }).refreshToken;
 
     if (!accessToken) {
       return NextResponse.json(
@@ -78,103 +100,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Generate DOCX buffer
-    const fileBuffer = await generateLogbookDocx({
+    // Generate PDF buffer
+    const fileBuffer = await generateLogbookPdf({
       logbook,
       activities: activitiesWithPhotos,
       user: userProfile,
       accessToken,
+      refreshToken,
     });
 
-    // Convert DOCX to HTML using mammoth
-    const arrayBuffer = fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength) as ArrayBuffer;
-    const result = await mammoth.convertToHtml(
-      { arrayBuffer },
-      {
-        styleMap: [
-          "p[style-name='center'] => p:fresh > center:fresh",
-          "r[style-name='Strong'] => strong",
-        ],
-      }
-    );
+    // ── Store in cache ──
+    exportCache.set(cacheKey, fileBuffer);
+    const elapsed = Math.round(performance.now() - startTime);
+    console.log(`[Preview API] Generated and cached in ${elapsed}ms (${(fileBuffer.length / 1024).toFixed(0)} KB)`);
 
-    const html = result.value;
-
-    // Wrap HTML in a clean document with styling
-    const styledHtml = `<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Preview Logbook</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Times New Roman', Times, serif;
-      font-size: 12pt;
-      line-height: 1.5;
-      color: #000;
-      padding: 40px 60px;
-      max-width: 210mm;
-      margin: 0 auto;
-      background: #f5f5f5;
-    }
-    .preview-container {
-      background: #fff;
-      padding: 60px 80px;
-      min-height: 297mm;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin: 12px 0;
-    }
-    table td, table th {
-      border: 1px solid #000;
-      padding: 6px 8px;
-      vertical-align: top;
-      font-size: 11pt;
-    }
-    table th {
-      background: #f0f0f0;
-      font-weight: bold;
-      text-align: center;
-    }
-    img {
-      max-width: 100%;
-      height: auto;
-    }
-    p {
-      margin: 6px 0;
-    }
-    h1, h2, h3, h4 {
-      margin: 12px 0 6px;
-    }
-    @media print {
-      body { background: #fff; padding: 0; }
-      .preview-container { box-shadow: none; padding: 0; }
-      .no-print { display: none !important; }
-    }
-  </style>
-</head>
-<body>
-  <div class="no-print" style="margin-bottom:16px;text-align:right;">
-    <button onclick="window.print()" style="padding:8px 20px;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;">
-      🖨️ Print / Save PDF
-    </button>
-  </div>
-  <div class="preview-container">
-    ${html}
-  </div>
-</body>
-</html>`;
-
-    return new NextResponse(styledHtml, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
       headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Content-Type": "application/pdf",
+        "Content-Disposition": "inline; filename=\"preview.pdf\"",
+        "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
+        "Content-Length": fileBuffer.length.toString(),
+        "X-Cache": "MISS",
       },
     });
   } catch (error) {

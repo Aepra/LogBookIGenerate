@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import imageCompression from "browser-image-compression";
 
 interface CreateActivityFormProps {
   logbookId: string;
@@ -27,17 +28,17 @@ export default function CreateActivityForm({ logbookId, defaultDate }: CreateAct
     setError(null);
 
     if (!title.trim()) {
-      setError("Title is required");
+      setError("Judul wajib diisi");
       return;
     }
 
     if (!activityDate) {
-      setError("Date is required");
+      setError("Tanggal wajib diisi");
       return;
     }
 
     if (startTime && endTime && startTime >= endTime) {
-      setError("End time must be after start time");
+      setError("Waktu selesai harus setelah waktu mulai");
       return;
     }
 
@@ -59,31 +60,57 @@ export default function CreateActivityForm({ logbookId, defaultDate }: CreateAct
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create activity");
+      if (!res.ok) throw new Error(data.error || "Gagal membuat aktivitas");
 
       // Step 2: Upload photos if any
       if (photoFiles.length > 0 && data.activity?.id) {
         setUploadingPhotos(true);
-        const formData = new FormData();
-        photoFiles.forEach((file) => formData.append("file", file));
-        formData.append("activity_id", data.activity.id);
+        
+        const compressionOptions = {
+          maxSizeMB: 0.5,
+          maxWidthOrHeight: 1200,
+          useWebWorker: true,
+        };
 
-        const photoRes = await fetch("/api/photos/upload", {
-          method: "POST",
-          body: formData,
-        });
+        // Compress all photos in parallel
+        const compressedFiles = await Promise.all(
+          photoFiles.map(async (file) => {
+            try {
+              return await imageCompression(file, compressionOptions);
+            } catch (error) {
+              console.error("Image compression failed:", error);
+              return file; // fallback to original
+            }
+          })
+        );
 
-        if (!photoRes.ok) {
-          const photoData = await photoRes.json();
-          console.error("Photo upload failed:", photoData.error);
-          // Non-blocking: still redirect even if photos fail
-        }
+        // Upload all compressed photos in parallel
+        await Promise.all(
+          compressedFiles.map(async (file) => {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("activity_id", data.activity.id);
+
+            try {
+              const photoRes = await fetch("/api/photos/upload", {
+                method: "POST",
+                body: formData,
+              });
+              if (!photoRes.ok) {
+                const photoData = await photoRes.json();
+                console.error("Photo upload failed:", photoData.error);
+              }
+            } catch (err) {
+              console.error("Failed to fetch photo upload API:", err);
+            }
+          })
+        );
       }
 
       router.push(`/logbook/${logbookId}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {
       setLoading(false);
       setUploadingPhotos(false);
@@ -129,7 +156,7 @@ export default function CreateActivityForm({ logbookId, defaultDate }: CreateAct
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label htmlFor="startTime" className="block text-[14px] font-medium text-[var(--text-primary)] mb-1.5">
-            Start Time <span className="text-[var(--text-tertiary)]">(optional)</span>
+            Waktu Mulai <span className="text-[var(--text-tertiary)]">(optional)</span>
           </label>
           <input
             id="startTime"
@@ -142,7 +169,7 @@ export default function CreateActivityForm({ logbookId, defaultDate }: CreateAct
         </div>
         <div>
           <label htmlFor="endTime" className="block text-[14px] font-medium text-[var(--text-primary)] mb-1.5">
-            End Time <span className="text-[var(--text-tertiary)]">(optional)</span>
+            Waktu Selesai <span className="text-[var(--text-tertiary)]">(optional)</span>
           </label>
           <input
             id="endTime"
@@ -265,7 +292,7 @@ export default function CreateActivityForm({ logbookId, defaultDate }: CreateAct
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            Creating...
+            Membuat...
           </>
         ) : (
           "Create Activity"

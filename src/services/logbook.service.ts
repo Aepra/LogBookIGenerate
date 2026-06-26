@@ -220,7 +220,7 @@ function resolveDateRange(
 function calculateHybridProgress(
   startDate: string,
   endDate: string,
-  uniqueActivityDays: number
+  uniqueActivityHari: number
 ): number {
   const start = new Date(startDate + "T00:00:00Z").getTime();
   const end = new Date(endDate + "T00:00:00Z").getTime();
@@ -229,15 +229,15 @@ function calculateHybridProgress(
   const now = today.getTime();
 
   const totalRangeMs = end - start;
-  const totalDays = Math.max(1, Math.round(totalRangeMs / 86400000) + 1);
+  const totalHari = Math.max(1, Math.round(totalRangeMs / 86400000) + 1);
 
   // Time-based progress: elapsed from start to today (clamped to end)
   const elapsedMs = Math.max(0, Math.min(now, end) - start);
-  const elapsedDays = Math.round(elapsedMs / 86400000);
-  const timeProgress = Math.min(1, elapsedDays / totalDays);
+  const elapsedHari = Math.round(elapsedMs / 86400000);
+  const timeProgress = Math.min(1, elapsedHari / totalHari);
 
   // Activity-based progress: unique days filled / total range
-  const activityProgress = Math.min(1, uniqueActivityDays / totalDays);
+  const activityProgress = Math.min(1, uniqueActivityHari / totalHari);
 
   // Hybrid: 60% time + 40% activity
   const hybrid = 0.6 * timeProgress + 0.4 * activityProgress;
@@ -326,7 +326,7 @@ export async function getUserLogbooksWithStats(userId: string): Promise<LogbookW
     const logbookActivities = activitiesByLogbook.get(logbook.id) || [];
     const totalActivities = logbookActivities.length;
     const uniqueDates = new Set(logbookActivities.map((a) => a.activity_date));
-    const totalDays = uniqueDates.size;
+    const totalHari = uniqueDates.size;
 
     // Get activity date strings for fallback
     const activityDateStrings = Array.from(uniqueDates);
@@ -344,7 +344,7 @@ export async function getUserLogbooksWithStats(userId: string): Promise<LogbookW
     // Calculate progress using hybrid formula
     let progressPercent = 0;
     if (startDate && endDate) {
-      progressPercent = calculateHybridProgress(startDate, endDate, totalDays);
+      progressPercent = calculateHybridProgress(startDate, endDate, totalHari);
     }
 
     // Count activities by date
@@ -354,20 +354,20 @@ export async function getUserLogbooksWithStats(userId: string): Promise<LogbookW
     }
 
     // Calculate remaining days
-    let remainingDays = 0;
+    let remainingHari = 0;
     if (startDate && endDate) {
       const end = new Date(endDate + "T00:00:00Z").getTime();
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const now = today.getTime();
-      remainingDays = Math.max(0, Math.round((end - now) / 86400000));
+      remainingHari = Math.max(0, Math.round((end - now) / 86400000));
     }
 
     const logbookData = logbook as Logbook & Record<string, unknown>;
 
     result.push({
       ...logbook,
-      total_days: totalDays,
+      total_days: totalHari,
       total_activities: totalActivities,
       total_photos: totalPhotos,
       progress_percent: Math.min(100, progressPercent),
@@ -379,7 +379,7 @@ export async function getUserLogbooksWithStats(userId: string): Promise<LogbookW
       institution_name: (logbookData as any).institution_name || undefined,
       supervisor_name: (logbookData as any).supervisor_name || undefined,
       mentor_name: (logbookData as any).mentor_name || undefined,
-      remaining_days: remainingDays,
+      remaining_days: remainingHari,
     });
   }
 
@@ -413,13 +413,19 @@ export async function deleteLogbook(
 
   let photoFileIds: string[] = [];
   if (activityIds.length > 0 && driveAccessToken) {
-    const { data: photos } = await supabaseAdmin
-      .from("photos")
-      .select("google_file_id")
-      .in("activity_id", activityIds)
-      .not("google_file_id", "is", null);
+    const CHUNK_SIZE = 40;
+    for (let i = 0; i < activityIds.length; i += CHUNK_SIZE) {
+      const chunk = activityIds.slice(i, i + CHUNK_SIZE);
+      const { data: photos } = await supabaseAdmin
+        .from("photos")
+        .select("google_file_id")
+        .in("activity_id", chunk)
+        .not("google_file_id", "is", null);
 
-    photoFileIds = photos?.map((p) => p.google_file_id).filter(Boolean) as string[] || [];
+      if (photos) {
+        photoFileIds.push(...(photos.map((p) => p.google_file_id).filter(Boolean) as string[]));
+      }
+    }
   }
 
   // ── Step 1: Delete all Drive files (best effort, non-blocking) ──
@@ -438,7 +444,11 @@ export async function deleteLogbook(
 
   // ── Step 2: Delete photos from DB ──
   if (activityIds.length > 0) {
-    await supabaseAdmin.from("photos").delete().in("activity_id", activityIds);
+    const CHUNK_SIZE = 40;
+    for (let i = 0; i < activityIds.length; i += CHUNK_SIZE) {
+      const chunk = activityIds.slice(i, i + CHUNK_SIZE);
+      await supabaseAdmin.from("photos").delete().in("activity_id", chunk);
+    }
   }
 
   // ── Step 3: Delete activities ──
@@ -488,18 +498,22 @@ export async function getLogbookDetail(
   const activityList = (activities || []) as Array<{ id: string; activity_date: string }>;
   const totalActivities = activityList.length;
   const uniqueDates = new Set(activityList.map((a) => a.activity_date));
-  const totalDays = uniqueDates.size;
+  const totalHari = uniqueDates.size;
   const activityDateStrings = Array.from(uniqueDates);
 
   // Query 3: Get photo count
   const activityIds = activityList.map((a) => a.id);
   let totalPhotos = 0;
   if (activityIds.length > 0) {
-    const { count } = await supabaseAdmin
-      .from("photos")
-      .select("*", { count: "exact", head: true })
-      .in("activity_id", activityIds);
-    totalPhotos = count || 0;
+    const CHUNK_SIZE = 40;
+    for (let i = 0; i < activityIds.length; i += CHUNK_SIZE) {
+      const chunk = activityIds.slice(i, i + CHUNK_SIZE);
+      const { count } = await supabaseAdmin
+        .from("photos")
+        .select("*", { count: "exact", head: true })
+        .in("activity_id", chunk);
+      if (count) totalPhotos += count;
+    }
   }
 
   // Resolve date range
@@ -512,7 +526,7 @@ export async function getLogbookDetail(
   // Calculate progress
   let progressPercent = 0;
   if (startDate && endDate) {
-    progressPercent = calculateHybridProgress(startDate, endDate, totalDays);
+    progressPercent = calculateHybridProgress(startDate, endDate, totalHari);
   }
 
   // Calculate activity count by date
@@ -522,32 +536,32 @@ export async function getLogbookDetail(
   }
 
   // Calculate remaining days
-  let remainingDays = 0;
+  let remainingHari = 0;
   if (startDate && endDate) {
     const end = new Date(endDate + "T00:00:00Z").getTime();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const now = today.getTime();
-    remainingDays = Math.max(0, Math.round((end - now) / 86400000));
+    remainingHari = Math.max(0, Math.round((end - now) / 86400000));
   }
 
   // Calculate total days in date range
-  let totalDateRangeDays = 0;
+  let totalDateRangeHari = 0;
   if (startDate && endDate) {
     const start = new Date(startDate + "T00:00:00Z").getTime();
     const end = new Date(endDate + "T00:00:00Z").getTime();
-    totalDateRangeDays = Math.max(1, Math.round((end - start) / 86400000) + 1);
+    totalDateRangeHari = Math.max(1, Math.round((end - start) / 86400000) + 1);
   } else if (uniqueDates.size > 0) {
     const sortedDates = Array.from(uniqueDates).sort();
     const start = new Date(sortedDates[0] + "T00:00:00Z").getTime();
     const end = new Date(sortedDates[sortedDates.length - 1] + "T00:00:00Z").getTime();
-    totalDateRangeDays = Math.max(1, Math.round((end - start) / 86400000) + 1);
+    totalDateRangeHari = Math.max(1, Math.round((end - start) / 86400000) + 1);
   }
 
   const l = logbook as any;
   return {
     ...logbook,
-    total_days: totalDays,
+    total_days: totalHari,
     total_activities: totalActivities,
     total_photos: totalPhotos,
     progress_percent: Math.min(100, progressPercent),
@@ -559,9 +573,9 @@ export async function getLogbookDetail(
     institution_name: l.institution_name || undefined,
     supervisor_name: l.supervisor_name || undefined,
     mentor_name: l.mentor_name || undefined,
-    remaining_days: remainingDays,
+    remaining_days: remainingHari,
     filled_days: uniqueDates.size,
-    total_date_range_days: totalDateRangeDays,
+    total_date_range_days: totalDateRangeHari,
   };
 }
 

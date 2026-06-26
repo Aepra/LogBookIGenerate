@@ -2,7 +2,7 @@
  * Export Logbook Download API
  * ============================
  * GET endpoint that downloads a logbook as DOCX or PDF file.
- * Uses the user's Google Drive access token to fetch photos.
+ * Uses server-side cache — if user previewed first, PDF download is instant.
  *
  * Query params:
  *   - logbook_id (required)
@@ -18,6 +18,7 @@ import { getActivitiesByLogbookId } from "@/services/activity.service";
 import { getPhotosByActivityIds } from "@/services/photo.service";
 import { generateLogbookDocx } from "@/services/export-docx.service";
 import { generateLogbookPdf } from "@/services/export-pdf.service";
+import { exportCache } from "@/services/cache/ExportCache";
 import type { PhotoRecord } from "@/services/photo.service";
 
 export async function GET(request: NextRequest) {
@@ -40,6 +41,29 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // ── Check cache first ──
+    const cacheKey = `export:${logbookId}:${format}`;
+    const cachedBuffer = exportCache.get(cacheKey);
+
+    if (cachedBuffer) {
+      console.log(`[Download API] Cache HIT for logbook ${logbookId.substring(0, 8)} (${format})`);
+      const mimeType = format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      const fileName = `LogBook_${logbookId.substring(0, 8)}.${format}`;
+
+      return new NextResponse(new Uint8Array(cachedBuffer), {
+        status: 200,
+        headers: {
+          "Content-Type": mimeType,
+          "Content-Disposition": `attachment; filename="${fileName}"`,
+          "Content-Length": cachedBuffer.length.toString(),
+          "X-Cache": "HIT",
+        },
+      });
+    }
+
+    console.log(`[Download API] Cache MISS for logbook ${logbookId.substring(0, 8)} (${format}), generating...`);
+    const startTime = performance.now();
+
     const userId = await getUserIdByEmail(session.user.email);
     const userProfile = await getUserByEmail(session.user.email);
 
@@ -76,6 +100,7 @@ export async function GET(request: NextRequest) {
 
     // Get access token for Drive photo fetching
     const accessToken = (session as unknown as { accessToken?: string }).accessToken;
+    const refreshToken = (session as unknown as { refreshToken?: string }).refreshToken;
 
     if (!accessToken) {
       return NextResponse.json(
@@ -94,6 +119,7 @@ export async function GET(request: NextRequest) {
         activities: activitiesWithPhotos,
         user: userProfile,
         accessToken,
+        refreshToken,
       });
       mimeType = "application/pdf";
       fileName = `LogBook_${logbook.title.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
@@ -103,11 +129,17 @@ export async function GET(request: NextRequest) {
         activities: activitiesWithPhotos,
         user: userProfile,
         accessToken,
+        refreshToken,
       });
       mimeType =
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
       fileName = `LogBook_${logbook.title.replace(/[^a-zA-Z0-9]/g, "_")}.docx`;
     }
+
+    // ── Store in cache ──
+    exportCache.set(cacheKey, fileBuffer);
+    const elapsed = Math.round(performance.now() - startTime);
+    console.log(`[Download API] Generated and cached in ${elapsed}ms (${(fileBuffer.length / 1024).toFixed(0)} KB)`);
 
     return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
@@ -115,6 +147,7 @@ export async function GET(request: NextRequest) {
         "Content-Type": mimeType,
         "Content-Disposition": `attachment; filename="${fileName}"`,
         "Content-Length": fileBuffer.length.toString(),
+        "X-Cache": "MISS",
       },
     });
   } catch (error) {

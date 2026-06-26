@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { getUserIdByEmail } from "@/lib/user";
 import { getTotalLogbooks, getRecentLogbooks } from "@/services/logbook.service";
-import { getTotalActivities, getTotalDaysAll, getTotalPhotosAll, getRecentActivities } from "@/services/activity.service";
+import { getTotalActivities, getTotalHariAll, getTotalPhotosAll, getRecentActivities } from "@/services/activity.service";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -19,9 +19,9 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const [totalLogbooks, totalDays, totalActivities, totalPhotos, recentLogbooks, recentActivities] = await Promise.all([
+    const [totalLogbooks, totalHari, totalActivities, totalPhotos, recentLogbooks, recentActivities] = await Promise.all([
       getTotalLogbooks(userId),
-      getTotalDaysAll(userId),
+      getTotalHariAll(userId),
       getTotalActivities(),
       getTotalPhotosAll(userId),
       getRecentLogbooks(userId, 5),
@@ -31,7 +31,7 @@ export async function GET() {
     return NextResponse.json({
       stats: {
         totalLogbooks,
-        totalDays,
+        totalHari,
         totalActivities,
         totalPhotos,
       },

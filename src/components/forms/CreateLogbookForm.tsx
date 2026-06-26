@@ -17,17 +17,17 @@ export default function CreateLogbookForm() {
     setError(null);
 
     if (!title.trim()) {
-      setError("Title is required");
+      setError("Judul wajib diisi");
       return;
     }
 
     if (!startDate || !endDate) {
-      setError("Start date and end date are required");
+      setError("Tanggal mulai dan tanggal selesai wajib diisi");
       return;
     }
 
     if (startDate > endDate) {
-      setError("End date must be after start date");
+      setError("Tanggal selesai harus setelah tanggal mulai");
       return;
     }
 
@@ -48,13 +48,13 @@ export default function CreateLogbookForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to create logbook");
+        throw new Error(data.error || "Gagal membuat logbook");
       }
 
       router.push(`/logbook/${data.logbook.id}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {
       setLoading(false);
     }
@@ -152,7 +152,7 @@ export default function CreateLogbookForm() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
-            Creating...
+            Membuat...
           </>
         ) : (
           "Create Logbook"

@@ -15,7 +15,7 @@ export default async function CreateLogbookPage() {
             href="/api/auth/signin"
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
           >
-            Sign in with Google
+            Masuk dengan Google
           </a>
         </div>
       </div>
@@ -23,7 +23,7 @@ export default async function CreateLogbookPage() {
   }
 
   return (
-    <div className="max-w-[700px] mx-auto px-4 sm:px-6 py-4 sm:py-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
       <div className="mb-5">
         <h1 className="text-[28px] sm:text-[32px] font-bold text-[var(--text-primary)] tracking-tight">Create New Logbook</h1>
         <p className="text-[14px] text-[var(--text-secondary)] mt-0.5">

@@ -4,6 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { updateActivity } from "@/services/activity.service";
 import { getUserIdByEmail } from "@/lib/user";
 import { supabaseAdmin } from "@/lib/supabase-server";
+import { invalidateExportCache } from "@/lib/invalidateExportCache";
 
 export async function GET(
   _request: NextRequest,
@@ -82,6 +83,11 @@ export async function PUT(
       obstacle,
     });
 
+    // Invalidate export cache since data changed
+    if (activity?.logbook_id) {
+      invalidateExportCache(activity.logbook_id);
+    }
+
     return NextResponse.json({ activity });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal server error";
@@ -142,6 +148,9 @@ export async function DELETE(
     if (error) {
       throw new Error(`Gagal menghapus aktivitas: ${error.message}`);
     }
+
+    // Invalidate export cache since data changed
+    invalidateExportCache(activity.logbook_id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

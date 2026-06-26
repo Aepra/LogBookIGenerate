@@ -52,9 +52,9 @@ export default function RecentActivities({
   }
 
   const groupLabels: Record<string, string> = {
-    today: "Today",
-    yesterday: "Yesterday",
-    earlier: "Earlier",
+    today: "Hari Ini",
+    yesterday: "Kemarin",
+    earlier: "Sebelumnya",
   };
 
   const hasActivities = activities.length > 0;
@@ -62,16 +62,16 @@ export default function RecentActivities({
   return (
     <section>
       <h2 className="text-[15px] font-semibold text-[var(--text-primary)] mb-3 px-0.5">
-        Recent Activities
+        Aktivitas Terkini
       </h2>
       {!hasActivities ? (
         <div className="ios-card p-8 text-center">
-          <p className="text-[14px] text-[var(--text-secondary)]">No activities yet.</p>
+          <p className="text-[14px] text-[var(--text-secondary)]">Belum ada aktivitas.</p>
           <Link
             href="/logbook"
             className="inline-block mt-2 text-[13px] text-[var(--accent-blue)] font-medium"
           >
-            Go to Logbooks
+            Buka Logbook
           </Link>
         </div>
       ) : (

@@ -93,7 +93,7 @@ export default function DashboardClient({ logbooks }: Props) {
         <h2 className="text-xl font-semibold">Logbook Aktif</h2>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
+          className="ios-btn-primary"
         >
           + Buat Logbook
         </button>
@@ -110,25 +110,28 @@ export default function DashboardClient({ logbooks }: Props) {
             <Link
               key={logbook.id}
               href={`/logbook/${logbook.id}`}
-              className="block p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-sm transition"
+              prefetch={true}
+              className="ios-card block p-5 border border-transparent hover:border-[var(--accent-primary)] hover:shadow-md transition-all duration-200"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{logbook.title}</h3>
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-2">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-lg text-[var(--text-primary)] truncate sm:whitespace-normal sm:line-clamp-2">{logbook.title}</h3>
                   {logbook.description && (
-                    <p className="text-gray-500 text-sm mt-1 line-clamp-2">
+                    <p className="text-[var(--text-secondary)] text-sm mt-1.5 line-clamp-2">
                       {logbook.description}
                     </p>
                   )}
-                  <p className="text-gray-400 text-xs mt-2">
+                  <p className="text-[var(--text-tertiary)] text-xs mt-3 font-medium">
                     Dibuat {formatDate(logbook.created_at)}
                   </p>
                 </div>
-                <span
-                  className={`ml-4 px-2.5 py-0.5 rounded-full text-xs font-medium ${typeBadgeClass(logbook.type)}`}
-                >
-                  {typeLabel(logbook.type)}
-                </span>
+                <div className="flex-shrink-0">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase ${typeBadgeClass(logbook.type)}`}
+                  >
+                    {typeLabel(logbook.type)}
+                  </span>
+                </div>
               </div>
             </Link>
           ))}
@@ -170,7 +173,7 @@ export default function DashboardClient({ logbooks }: Props) {
                   onChange={handleChange}
                   required
                   placeholder="Contoh: PKL di PT Maju Jaya"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="ios-input"
                 />
               </div>
 
@@ -184,7 +187,7 @@ export default function DashboardClient({ logbooks }: Props) {
                   onChange={handleChange}
                   rows={3}
                   placeholder="Deskripsi singkat tentang logbook ini"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="ios-input resize-none"
                 />
               </div>
 
@@ -196,7 +199,7 @@ export default function DashboardClient({ logbooks }: Props) {
                   name="type"
                   value={form.type}
                   onChange={handleChange}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="ios-select"
                 >
                   <option value="pkl">PKL</option>
                   <option value="kkn">KKN</option>
@@ -218,7 +221,7 @@ export default function DashboardClient({ logbooks }: Props) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="ios-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? "Menyimpan..." : "Simpan"}
                 </button>

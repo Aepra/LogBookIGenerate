@@ -24,7 +24,7 @@ export default async function LogbookDetailPage({
             href="/api/auth/signin"
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
           >
-            Sign in with Google
+            Masuk dengan Google
           </a>
         </div>
       </div>
@@ -77,15 +77,15 @@ function NotFound() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="text-center max-w-md">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Logbook Not Found</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Logbook Tidak Ditemukan</h1>
         <p className="text-gray-500 mb-6">
-          The logbook you are looking for does not exist or has been deleted.
+          Buku log yang Anda cari tidak ada atau telah dihapus.
         </p>
         <a
           href="/logbook"
           className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
         >
-          Back to Logbooks
+          Kembali ke Logbook
         </a>
       </div>
     </div>
