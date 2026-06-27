@@ -113,7 +113,7 @@ function PhotoThumbnail({
         className="w-16 h-16 rounded overflow-hidden border border-[#d4a373]/30 hover:border-[#d4a373] transition shadow-sm"
       >
         <img
-          src={`/api/photos/proxy?fileId=${photo.google_file_id}`}
+          src={photo.google_file_id?.startsWith("http") ? photo.google_file_id : `/api/photos/proxy?fileId=${photo.google_file_id}`}
           alt=""
           className="w-full h-full object-cover"
           loading="lazy"
@@ -578,7 +578,7 @@ export default function LogbookEditor({
           <div className="max-w-2xl max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => setPreviewUrl(null)} className="float-right mb-2 text-white text-xl hover:text-gray-300">&times;</button>
             <img
-              src={`/api/photos/proxy?fileId=${previewUrl.split("/d/")[1]?.split("/")[0] || ""}`}
+              src={previewUrl.startsWith("http") ? previewUrl : `/api/photos/proxy?fileId=${previewUrl.split("/d/")[1]?.split("/")[0] || ""}`}
               alt="Preview"
               className="max-w-full max-h-[85vh] rounded-lg shadow-xl"
             />

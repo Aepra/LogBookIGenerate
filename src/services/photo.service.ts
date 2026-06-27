@@ -203,7 +203,7 @@ export async function uploadActivityPhoto(
 // ─────────────────────────────────────
 
 /**
- * Deletes a photo (metadata only — Drive file deletion is optional).
+ * Deletes a photo (metadata only).
  * Only the owner of the activity can delete photos.
  */
 export async function deletePhoto(

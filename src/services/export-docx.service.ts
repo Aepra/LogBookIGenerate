@@ -11,9 +11,7 @@ import * as path from "path";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import ImageModule from "docxtemplater-image-module";
-import { refreshAccessToken } from "@/lib/token-refresh";
 import sharp from "sharp";
-import { getServiceAccountToken } from "@/lib/google-service-account";
 
 // Monkey patch docxtemplater ScopeManager prototype to fix docxtemplater-image-module compatibility.
 // This is necessary because ScopeManager in newer versions of docxtemplater expects context (meta)
@@ -55,9 +53,6 @@ async function fetchDriveImagesParallel(
   const results = new Map<string, Buffer | null>();
   if (grouped.length === 0) return results;
 
-  const token = await getServiceAccountToken();
-  if (!token) return results;
-
   const fetchSingleImage = async (fileId: string): Promise<Buffer | null> => {
     try {
       let arrayBuffer: ArrayBuffer | null = null;
@@ -69,13 +64,7 @@ async function fetchDriveImagesParallel(
           arrayBuffer = await res.arrayBuffer();
         }
       } else {
-        // Legacy Google Drive fileId
-        const res = await fetch(`${DRIVE_API_BASE}/files/${fileId}?alt=media`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          arrayBuffer = await res.arrayBuffer();
-        }
+        console.warn("Google Drive URLs are no longer supported for export.");
       }
 
       if (!arrayBuffer) return null;
@@ -149,10 +138,8 @@ export async function generateLogbookDocx(params: {
   logbook: any;
   activities: any[];
   user: any;
-  accessToken: string;
-  refreshToken?: string;
 }): Promise<Buffer> {
-  const { logbook, activities, user, accessToken, refreshToken } = params;
+  const { logbook, activities, user } = params;
 
   // Group activities by date (ascending — oldest first, as in a real logbook)
   const byDate: Record<string, any[]> = {};

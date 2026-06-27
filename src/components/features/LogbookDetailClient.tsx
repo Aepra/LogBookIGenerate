@@ -294,11 +294,13 @@ function InlinePhotoUploader({
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || data.error || "Upload failed");
       if (data.photo) {
+        const fileId = data.photo.google_file_id || "";
+        const imgUrl = fileId.startsWith("http") ? fileId : `/api/photos/proxy?fileId=${fileId}`;
         onUploadComplete({
           id: data.photo.id,
           file_name: data.photo.google_file_id || "photo",
-          file_url: `/api/photos/proxy?fileId=${data.photo.google_file_id}`,
-          thumbnail_url: `/api/photos/proxy?fileId=${data.photo.google_file_id}`,
+          file_url: imgUrl,
+          thumbnail_url: imgUrl,
         });
       }
       setSuccess(true);

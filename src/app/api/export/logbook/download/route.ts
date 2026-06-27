@@ -89,18 +89,17 @@ export async function GET(request: NextRequest) {
       const photos = photoMap.get(activity.id) || [];
       return {
         ...activity,
-        photos: photos.map((p: PhotoRecord) => ({
-          ...p,
-          google_file_id: p.google_file_id,
-          file_url: `/api/photos/proxy?fileId=${p.google_file_id}`,
-          thumbnail_url: `/api/photos/proxy?fileId=${p.google_file_id}`,
-        })),
+        photos: photos.map((p: PhotoRecord) => {
+          const imgUrl = p.google_file_id?.startsWith("http") ? p.google_file_id : `/api/photos/proxy?fileId=${p.google_file_id}`;
+          return {
+            ...p,
+            google_file_id: p.google_file_id,
+            file_url: imgUrl,
+            thumbnail_url: imgUrl,
+          };
+        }),
       };
     });
-
-    // Get access token for Drive photo fetching (fallback)
-    const accessToken = (session as unknown as { accessToken?: string }).accessToken || "";
-    const refreshToken = (session as unknown as { refreshToken?: string }).refreshToken;
 
     let fileBuffer: Buffer;
     let mimeType: string;
@@ -111,8 +110,6 @@ export async function GET(request: NextRequest) {
         logbook,
         activities: activitiesWithPhotos,
         user: userProfile,
-        accessToken,
-        refreshToken,
       });
       mimeType = "application/pdf";
       fileName = `LogBook_${logbook.title.replace(/[^a-zA-Z0-9]/g, "_")}.pdf`;
@@ -121,8 +118,6 @@ export async function GET(request: NextRequest) {
         logbook,
         activities: activitiesWithPhotos,
         user: userProfile,
-        accessToken,
-        refreshToken,
       });
       mimeType =
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document";

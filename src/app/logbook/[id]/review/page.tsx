@@ -55,12 +55,15 @@ export default async function LogbookReviewPage({
     const photos = photoMap.get(activity.id) || [];
     return {
       ...activity,
-      photos: photos.map((p: PhotoRecord) => ({
-        id: p.id,
-        file_name: p.google_file_id || "photo",
-        file_url: `/api/photos/proxy?fileId=${p.google_file_id}`,
-        thumbnail_url: `/api/photos/proxy?fileId=${p.google_file_id}`,
-      })),
+      photos: photos.map((p: PhotoRecord) => {
+        const imgUrl = p.google_file_id?.startsWith("http") ? p.google_file_id : `/api/photos/proxy?fileId=${p.google_file_id}`;
+        return {
+          id: p.id,
+          file_name: p.google_file_id || "photo",
+          file_url: imgUrl,
+          thumbnail_url: imgUrl,
+        };
+      }),
     };
   });
 

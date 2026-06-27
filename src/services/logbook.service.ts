@@ -346,8 +346,7 @@ export async function getUserLogbooksWithStats(userId: string): Promise<LogbookW
 
 export async function deleteLogbook(
   logbookId: string,
-  userId: string,
-  driveAccessToken?: string
+  userId: string
 ): Promise<void> {
   // Verify ownership
   const { data: logbook } = await supabaseAdmin
@@ -361,44 +360,13 @@ export async function deleteLogbook(
     throw new Error("Logbook tidak ditemukan.");
   }
 
-  // Get all photos with google_file_id for Drive cleanup
+  // Get all activities to delete photos
   const { data: activities } = await supabaseAdmin
     .from("activities")
     .select("id")
     .eq("logbook_id", logbookId);
 
   const activityIds = activities?.map((a) => a.id) || [];
-
-  let photoFileIds: string[] = [];
-  if (activityIds.length > 0 && driveAccessToken) {
-    const CHUNK_SIZE = 40;
-    for (let i = 0; i < activityIds.length; i += CHUNK_SIZE) {
-      const chunk = activityIds.slice(i, i + CHUNK_SIZE);
-      const { data: photos } = await supabaseAdmin
-        .from("photos")
-        .select("google_file_id")
-        .in("activity_id", chunk)
-        .not("google_file_id", "is", null);
-
-      if (photos) {
-        photoFileIds.push(...(photos.map((p) => p.google_file_id).filter(Boolean) as string[]));
-      }
-    }
-  }
-
-  // ── Step 1: Delete all Drive files (best effort, non-blocking) ──
-  if (driveAccessToken) {
-    for (const fileId of photoFileIds) {
-      try {
-        await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${driveAccessToken}` },
-        });
-      } catch {
-        // Best effort — proceed with DB cleanup regardless
-      }
-    }
-  }
 
   // ── Step 2: Delete photos from DB ──
   if (activityIds.length > 0) {

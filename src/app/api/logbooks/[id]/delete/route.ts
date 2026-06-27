@@ -21,8 +21,7 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const accessToken = session.accessToken as string | undefined;
-    await deleteLogbook(id, userId, accessToken);
+    await deleteLogbook(id, userId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

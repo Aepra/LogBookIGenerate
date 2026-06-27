@@ -35,7 +35,7 @@ export default function PhotoPreviewModal({
         onClick={(e) => e.stopPropagation()}
       >
         <img
-          src={`/api/photos/proxy?fileId=${photo.google_file_id}`}
+          src={photo.google_file_id?.startsWith("http") ? photo.google_file_id : `/api/photos/proxy?fileId=${photo.google_file_id}`}
           alt="Photo preview"
           className="max-w-full max-h-[90vh] object-contain rounded-lg"
         />
