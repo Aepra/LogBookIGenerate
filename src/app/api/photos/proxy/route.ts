@@ -71,6 +71,11 @@ export async function GET(request: NextRequest) {
     return new NextResponse("Missing fileId or activity_id", { status: 400 });
   }
 
+  // ── Cloudinary direct URL check ──
+  if (fileId.startsWith("http")) {
+    return NextResponse.redirect(fileId);
+  }
+
   try {
     // Step 1: Get file metadata to know the MIME type
     const metaRes = await fetch(

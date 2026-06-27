@@ -13,14 +13,14 @@
  */
 
 import { supabaseAdmin } from "@/lib/supabase-server";
-import type { TraceContext, DriveError } from "@/types/drive";
-import { uploadFileToActivityFolder, deleteDriveFile } from "@/services/google-drive.service";
+import type { TraceContext } from "@/types/drive"; // Can be renamed later, but keep for now
+import { uploadToCloudinary } from "@/services/cloudinary.service";
 
 export interface PhotoRecord {
   id: string;
   activity_id: string;
-  google_file_id: string;
-  google_drive_url: string;
+  google_file_id: string; // We'll store Cloudinary URL here for now to avoid DB migrations
+  google_drive_url: string; // Keep for backwards compatibility
   created_at: string;
 }
 
@@ -28,11 +28,8 @@ export interface PhotoUploadResult {
   success: boolean;
   photo?: PhotoRecord;
   error?: string;
-  /** Structured error code for reliable client-side handling (v2) */
   code?: string;
-  /** Which step failed (v2) */
   step?: string;
-  /** Whether this error may be retried (v2) */
   retryable?: boolean;
 }
 
@@ -40,20 +37,16 @@ export interface PhotoUploadResult {
 //  INTERNAL HELPERS
 // ─────────────────────────────────────
 
-/**
- * Saves photo metadata to Supabase photos table.
- */
 async function savePhotoMetadata(
   activityId: string,
-  googleFileId: string,
-  googleDriveUrl: string
+  cloudinaryUrl: string
 ): Promise<PhotoRecord> {
   const { data, error } = await supabaseAdmin
     .from("photos")
     .insert({
       activity_id: activityId,
-      google_file_id: googleFileId,
-      google_drive_url: googleDriveUrl,
+      google_file_id: cloudinaryUrl, // Store public URL directly
+      google_drive_url: cloudinaryUrl, // Keep for backwards compatibility
     })
     .select()
     .single();
@@ -69,9 +62,6 @@ async function savePhotoMetadata(
 //  EXPORTED: GETTERS
 // ─────────────────────────────────────
 
-/**
- * Gets all photos for a given activity, ordered by creation date.
- */
 export async function getPhotosByActivityId(
   activityId: string
 ): Promise<PhotoRecord[]> {
@@ -89,10 +79,6 @@ export async function getPhotosByActivityId(
   return (data as PhotoRecord[]) || [];
 }
 
-/**
- * Gets all photos grouped by activity IDs (batch query).
- * Returns Map<activityId, PhotoRecord[]>
- */
 export async function getPhotosByActivityIds(
   activityIds: string[]
 ): Promise<Map<string, PhotoRecord[]>> {
@@ -100,7 +86,6 @@ export async function getPhotosByActivityIds(
 
   const grouped = new Map<string, PhotoRecord[]>();
   
-  // Chunk the activityIds to avoid URL length limits
   const chunkSize = 20;
   for (let i = 0; i < activityIds.length; i += chunkSize) {
     const chunk = activityIds.slice(i, i + chunkSize);
@@ -113,7 +98,7 @@ export async function getPhotosByActivityIds(
 
     if (error || !data) {
       console.error("[Photo Service] Gagal mengambil batch foto (chunk):", error?.message);
-      continue; // keep going with other chunks
+      continue;
     }
 
     for (const photo of data as PhotoRecord[]) {
@@ -127,20 +112,9 @@ export async function getPhotosByActivityIds(
 }
 
 // ─────────────────────────────────────
-//  EXPORTED: UPLOAD — v2
+//  EXPORTED: UPLOAD (Cloudinary)
 // ─────────────────────────────────────
 
-/**
- * Uploads a photo for an activity.
- *
- * Flow:
- * 1. Fetch activity → get logbook_id
- * 2. Fetch logbook → get logbook title (for folder chain)
- * 3. Fetch user → get drive_folder_id
- * 4. Upload file to Google Drive (logbookId as folder key)
- * 5. Save metadata to Supabase photos table
- * 6. Return photo record
- */
 export async function uploadActivityPhoto(
   trace: TraceContext,
   activityId: string,
@@ -150,7 +124,6 @@ export async function uploadActivityPhoto(
   fileBuffer: ArrayBuffer
 ): Promise<PhotoUploadResult> {
   try {
-    // ── Step 1: Validate ownership via single chain query ──
     trace.log("UPLOAD", "Step 1: fetching activity from DB");
     const { data: activity, error: activityError } = await supabaseAdmin
       .from("activities")
@@ -164,9 +137,7 @@ export async function uploadActivityPhoto(
     }
 
     const logbookId = activity.logbook_id;
-    trace.log("UPLOAD", "Step 1a: logbook_id resolved", { logbookId });
 
-    // ── Step 2: Fetch logbook details (title only needed for metadata; Drive uses logbookId) ──
     trace.log("UPLOAD", "Step 2: fetching logbook", { logbookId });
     const { data: logbook, error: logbookError } = await supabaseAdmin
       .from("logbooks")
@@ -179,94 +150,41 @@ export async function uploadActivityPhoto(
       return { success: false, error: "Logbook tidak ditemukan.", code: "LOGBOOK_NOT_FOUND", step: "STEP2_LOGBOOK", retryable: false };
     }
 
-    // Verify ownership: logbook must belong to this user
     if (logbook.user_id !== userId) {
       trace.error("UPLOAD", "ownership denied", { logbookUserId: logbook.user_id, userId });
       return { success: false, error: "Anda tidak memiliki akses ke activity ini.", code: "OWNERSHIP_DENIED", step: "STEP2_OWNERSHIP", retryable: false };
     }
 
-    trace.log("UPLOAD", "Step 2a: ownership verified", { title: logbook.title });
+    trace.log("UPLOAD", "Step 3: uploading to Cloudinary", { fileName, logbookId });
+    
+    const uploadResult = await uploadToCloudinary(trace, fileBuffer, logbookId, fileName);
 
-    // ── Step 3: Get user's root folder ID ──
-    trace.log("UPLOAD", "Step 3: fetching user from DB", { userId });
-    const { data: userData, error: userError } = await supabaseAdmin
-      .from("users")
-      .select("drive_folder_id, email, name")
-      .eq("id", userId)
-      .single();
-
-    if (userError || !userData) {
-      trace.error("UPLOAD", "user not found", { error: userError?.message });
-      return { success: false, error: "User tidak ditemukan.", code: "USER_NOT_FOUND", step: "STEP3_USER", retryable: false };
-    }
-
-    if (!userData.drive_folder_id) {
-      trace.error("UPLOAD", "no drive_folder_id for user");
+    if (!uploadResult || !uploadResult.url) {
+      trace.error("UPLOAD", "Cloudinary upload returned null");
       return {
         success: false,
-        error: "Drive root folder belum tersedia. Silakan login ulang.",
-        code: "FOLDER_NOT_FOUND",
-        step: "STEP3_ROOT_FOLDER",
-        retryable: false,
-      };
-    }
-
-    trace.log("UPLOAD", "Step 3a: user data OK", { driveFolderId: userData.drive_folder_id?.substring(0, 10) + "...", email: userData.email, name: userData.name });
-
-    // ── Step 4: Upload file to Drive (logbookId as folder key) ──
-    trace.log("UPLOAD", "Step 4: uploading to Drive", { fileName, logbookId });
-    const userName = userData.name || userData.email?.split("@")[0] || "UnknownUser";
-    const uploadResult = await uploadFileToActivityFolder({
-      trace,
-      fileBuffer,
-      fileName,
-      mimeType,
-      userRootFolderId: userData.drive_folder_id,
-      logbookId,
-      userName, // v2: pass name for Drive folder repair
-    });
-
-    if (!uploadResult) {
-      trace.error("UPLOAD", "Drive upload returned null");
-      return {
-        success: false,
-        error: "Gagal mengupload file ke Google Drive.",
-        code: "DRIVE_API_ERROR",
-        step: "UPLOAD_TO_DRIVE",
+        error: "Gagal mengupload file ke Cloudinary.",
+        code: "CLOUDINARY_API_ERROR",
+        step: "UPLOAD_TO_CLOUDINARY",
         retryable: true,
       };
     }
 
-    trace.log("UPLOAD", "Step 4a: upload success", { fileId: uploadResult.fileId });
-
-    // ── Step 5: Save metadata to Supabase ──
-    trace.log("UPLOAD", "Step 5: saving to DB");
+    trace.log("UPLOAD", "Step 4: saving to DB");
     try {
       const photo = await savePhotoMetadata(
         activityId,
-        uploadResult.fileId,
-        uploadResult.webViewLink
+        uploadResult.url
       );
 
-      trace.log("UPLOAD", "Step 5a: photo saved", { photoId: photo.id });
+      trace.log("UPLOAD", "Step 4a: photo saved", { photoId: photo.id });
       return { success: true, photo };
     } catch (dbError) {
-      // ORPHAN FILE SAFETY FIX
-      // Drive upload succeeded but DB insert failed.
-      // Best-effort cleanup: delete the orphan file from Drive.
-      trace.warn("UPLOAD", "DB insert failed — cleaning up orphan Drive file", { fileId: uploadResult.fileId });
-      const cleaned = await deleteDriveFile(trace, uploadResult.fileId);
-      if (cleaned) {
-        trace.log("UPLOAD", "orphan file cleaned from Drive", { fileId: uploadResult.fileId });
-      } else {
-        trace.error("UPLOAD", "could not clean up orphan file", { fileId: uploadResult.fileId });
-      }
-
       const dbMsg = dbError instanceof Error ? dbError.message : "Gagal menyimpan metadata foto.";
-      trace.error("UPLOAD", `DB insert failed after Drive upload`, { message: dbMsg });
+      trace.error("UPLOAD", `DB insert failed after Cloudinary upload`, { message: dbMsg });
       return {
         success: false,
-        error: "Foto berhasil diupload ke Drive tetapi gagal disimpan di database. Silakan refresh.",
+        error: "Foto berhasil diupload tetapi gagal disimpan di database.",
         code: "DB_INSERT_FAILED",
         step: "SAVE_METADATA",
         retryable: true,

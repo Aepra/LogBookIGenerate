@@ -61,11 +61,21 @@ async function fetchDriveImagesParallel(
   const fetchSingleImage = async (fileId: string): Promise<Buffer | null> => {
     try {
       let arrayBuffer: ArrayBuffer | null = null;
-      const res = await fetch(`${DRIVE_API_BASE}/files/${fileId}?alt=media`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        arrayBuffer = await res.arrayBuffer();
+      
+      if (fileId.startsWith("http")) {
+        // Cloudinary or other direct URL
+        const res = await fetch(fileId);
+        if (res.ok) {
+          arrayBuffer = await res.arrayBuffer();
+        }
+      } else {
+        // Legacy Google Drive fileId
+        const res = await fetch(`${DRIVE_API_BASE}/files/${fileId}?alt=media`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          arrayBuffer = await res.arrayBuffer();
+        }
       }
 
       if (!arrayBuffer) return null;

@@ -169,8 +169,8 @@ export async function POST(request: NextRequest) {
       case "DB_INSERT_FAILED":
         status = 500;
         break;
-      case "DRIVE_API_ERROR":
-        status = 502; // Bad Gateway — upstream Drive error
+      case "CLOUDINARY_API_ERROR":
+        status = 502; // Bad Gateway — upstream Cloudinary error
         break;
       case "TOKEN_MISSING":
       case "FOLDER_NOT_FOUND":
@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  trace.log("DONE", `photo uploaded successfully`, { photoId: result.photo?.id, fileId: result.photo?.google_file_id?.substring(0, 20) });
+  trace.log("DONE", `photo uploaded successfully`, { photoId: result.photo?.id, imageUrl: result.photo?.google_file_id });
 
   return NextResponse.json(
     {
