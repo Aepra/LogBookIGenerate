@@ -20,7 +20,7 @@ import { getUserIdByEmail } from "@/lib/user";
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.accessToken || !session?.user?.email) {
+  if (!session?.user?.email) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
@@ -77,11 +77,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    if (!(session as any).accessToken) {
+      return new NextResponse("Google Drive access token missing", { status: 401 });
+    }
+
     // Step 1: Get file metadata to know the MIME type
     const metaRes = await fetch(
       `https://www.googleapis.com/drive/v3/files/${fileId}?fields=mimeType,size`,
       {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
+        headers: { Authorization: `Bearer ${(session as any).accessToken}` },
       }
     );
 
@@ -108,7 +112,7 @@ export async function GET(request: NextRequest) {
     const downloadRes = await fetch(
       `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
       {
-        headers: { Authorization: `Bearer ${session.accessToken}` },
+        headers: { Authorization: `Bearer ${(session as any).accessToken}` },
       }
     );
 

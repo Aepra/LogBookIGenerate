@@ -89,16 +89,9 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Get access token for Drive photo fetching
-    const accessToken = (session as unknown as { accessToken?: string }).accessToken;
+    // Get access token for Drive photo fetching (fallback for legacy Drive IDs)
+    const accessToken = (session as unknown as { accessToken?: string }).accessToken || "";
     const refreshToken = (session as unknown as { refreshToken?: string }).refreshToken;
-
-    if (!accessToken) {
-      return NextResponse.json(
-        { error: "Google Drive access token not available. Please re-login." },
-        { status: 401 }
-      );
-    }
 
     // Generate PDF buffer
     const fileBuffer = await generateLogbookPdf({
