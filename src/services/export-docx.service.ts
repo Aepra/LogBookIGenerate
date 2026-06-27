@@ -13,6 +13,7 @@ import Docxtemplater from "docxtemplater";
 import ImageModule from "docxtemplater-image-module";
 import { refreshAccessToken } from "@/lib/token-refresh";
 import sharp from "sharp";
+import { getServiceAccountToken } from "@/lib/google-service-account";
 
 // Monkey patch docxtemplater ScopeManager prototype to fix docxtemplater-image-module compatibility.
 // This is necessary because ScopeManager in newer versions of docxtemplater expects context (meta)
@@ -49,35 +50,21 @@ const IMAGE_JPEG_QUALITY = 60;
 
 async function fetchDriveImagesParallel(
   grouped: { activityId: string; fileId: string }[],
-  accessToken: string,
-  refreshToken?: string,
   imageDimensions?: Map<Buffer, [number, number]>
 ): Promise<Map<string, Buffer | null>> {
   const results = new Map<string, Buffer | null>();
   if (grouped.length === 0) return results;
 
-  let currentToken = accessToken;
+  const token = await getServiceAccountToken();
+  if (!token) return results;
 
-  const fetchSingleImage = async (fileId: string, token: string): Promise<Buffer | null> => {
+  const fetchSingleImage = async (fileId: string): Promise<Buffer | null> => {
     try {
       let arrayBuffer: ArrayBuffer | null = null;
       const res = await fetch(`${DRIVE_API_BASE}/files/${fileId}?alt=media`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) {
-        if (res.status === 401 && refreshToken) {
-          const refreshed = await refreshAccessToken({ refreshToken });
-          if (refreshed.accessToken) {
-            currentToken = refreshed.accessToken;
-            const retryRes = await fetch(`${DRIVE_API_BASE}/files/${fileId}?alt=media`, {
-              headers: { Authorization: `Bearer ${currentToken}` },
-            });
-            if (retryRes.ok) {
-              arrayBuffer = await retryRes.arrayBuffer();
-            }
-          }
-        }
-      } else {
+      if (res.ok) {
         arrayBuffer = await res.arrayBuffer();
       }
 
@@ -104,7 +91,7 @@ async function fetchDriveImagesParallel(
   for (let i = 0; i < grouped.length; i += IMAGE_BATCH_SIZE) {
     const batch = grouped.slice(i, i + IMAGE_BATCH_SIZE);
     const fetches = batch.map(async ({ activityId, fileId }) => {
-      const buffer = await fetchSingleImage(fileId, currentToken);
+      const buffer = await fetchSingleImage(fileId);
       results.set(activityId, buffer);
     });
     await Promise.all(fetches);
@@ -184,7 +171,7 @@ export async function generateLogbookDocx(params: {
   }
 
   const imageDimensions = new Map<Buffer, [number, number]>();
-  const photoBuffers = await fetchDriveImagesParallel(photoFetchList, accessToken, refreshToken, imageDimensions);
+  const photoBuffers = await fetchDriveImagesParallel(photoFetchList, imageDimensions);
 
   // ─────────────────────────────────────
   //  BUILD ACTIVITIES DATA FOR TEMPLATE (PER WEEK)

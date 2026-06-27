@@ -22,7 +22,7 @@ import { defaultCache } from "@/services/cache/MapCache";
 
 const DRIVE_API_BASE = "https://www.googleapis.com/drive/v3";
 const UPLOAD_BASE = "https://www.googleapis.com/upload/drive/v3";
-const ROOT_FOLDER_NAME = "riwaya";
+const ROOT_FOLDER_NAME = "RiwayaFoto";
 const IMAGE_ROOT_NAME = "logbookidImage";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_RETRIES = 2;
