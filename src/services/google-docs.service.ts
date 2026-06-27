@@ -26,11 +26,7 @@ export interface DocParagraph {
  * Creates an empty Google Doc via Drive API.
  * Returns document ID or null on failure.
  */
-async function createEmptyDoc(
-  accessToken: string,
-  title: string,
-  parentFolderId?: string
-): Promise<string | null> {
+async function createEmptyDoc(title: string, parentFolderId?: string): Promise<string | null> {
   try {
     const body: Record<string, unknown> = {
       name: title,
@@ -44,13 +40,10 @@ async function createEmptyDoc(
     const accessToken = await getServiceAccountToken();
     if (!accessToken) return null;
 
-    const accessToken = await getServiceAccountToken();
-    if (!accessToken) return false;
-
     const response = await fetch(`${DRIVE_API_BASE}/files`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${await getServiceAccountToken()}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
@@ -73,11 +66,7 @@ async function createEmptyDoc(
  * Inserts content into a Google Doc using batchUpdate.
  * Uses a series of insertText and updateParagraphStyle requests.
  */
-async function writeContentToDoc(
-  accessToken: string,
-  documentId: string,
-  paragraphs: DocParagraph[]
-): Promise<boolean> {
+async function writeContentToDoc(documentId: string, paragraphs: DocParagraph[]): Promise<boolean> {
   try {
     // Build structured content with special markers for formatting
     // Strategy: insert all text as one batch, then apply formatting
@@ -153,7 +142,7 @@ async function writeContentToDoc(
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `Bearer ${await getServiceAccountToken()}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ requests }),
@@ -180,18 +169,11 @@ async function writeContentToDoc(
 export async function createDocumentFromParagraphs(
   request: DocRequest
 ): Promise<string | null> {
-  const docId = await createEmptyDoc(
-    request.accessToken,
-    request.title
-  );
+  const docId = await createEmptyDoc(request.title);
 
   if (!docId) return null;
 
-  const written = await writeContentToDoc(
-    request.accessToken,
-    docId,
-    request.paragraphs
-  );
+  const written = await writeContentToDoc(docId, request.paragraphs);
 
   if (!written) return null;
 

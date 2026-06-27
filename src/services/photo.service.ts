@@ -147,9 +147,7 @@ export async function uploadActivityPhoto(
   userId: string,
   fileName: string,
   mimeType: string,
-  fileBuffer: ArrayBuffer,
-  accessToken: string,
-  refreshToken: () => Promise<string | null>
+  fileBuffer: ArrayBuffer
 ): Promise<PhotoUploadResult> {
   try {
     // ── Step 1: Validate ownership via single chain query ──
@@ -258,7 +256,7 @@ export async function uploadActivityPhoto(
       // Drive upload succeeded but DB insert failed.
       // Best-effort cleanup: delete the orphan file from Drive.
       trace.warn("UPLOAD", "DB insert failed — cleaning up orphan Drive file", { fileId: uploadResult.fileId });
-      const cleaned = await deleteDriveFile(trace, accessToken, refreshToken, uploadResult.fileId);
+      const cleaned = await deleteDriveFile(trace, uploadResult.fileId);
       if (cleaned) {
         trace.log("UPLOAD", "orphan file cleaned from Drive", { fileId: uploadResult.fileId });
       } else {
