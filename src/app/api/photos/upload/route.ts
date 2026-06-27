@@ -132,49 +132,6 @@ export async function POST(request: NextRequest) {
   }
   trace.log("USER", `userId resolved: ${userId}`);
 
-  // ── Access token check ──
-  const accessToken = session.accessToken;
-  const accessTokenExpires = session.accessTokenExpires;
-  const refreshTokenRaw = session.refreshToken;
-  const isExpired = accessTokenExpires ? Date.now() >= accessTokenExpires : false;
-
-  trace.log("TOKEN", "access token status", {
-    hasToken: !!accessToken,
-    hasRefreshToken: !!refreshTokenRaw,
-    isExpired,
-    expiresAt: accessTokenExpires ? new Date(accessTokenExpires).toISOString() : "unknown",
-  });
-
-  if (!accessToken) {
-    trace.error("TOKEN", "no access token available");
-    return NextResponse.json(
-      { code: "TOKEN_MISSING", message: "Sesi Google Drive tidak tersedia. Silakan logout dan login ulang.", step: "TOKEN", action: "RELOGIN_REQUIRED", retryable: false },
-      { status: 401 }
-    );
-  }
-
-  // ── Build refreshToken callback ──
-  // This will be passed to the Drive service and called on 401.
-  // It uses the same refreshToken logic as NextAuth's JWT callback.
-  const refreshTokenCallback = async (): Promise<string | null> => {
-    if (!refreshTokenRaw) {
-      trace.warn("TOKEN_REFRESH", "no refresh token available");
-      return null;
-    }
-    trace.log("TOKEN_REFRESH", "attempting refresh...");
-    const refreshed = await refreshAccessToken({
-      accessToken,
-      refreshToken: refreshTokenRaw,
-      accessTokenExpires,
-    });
-    if (refreshed.accessToken) {
-      trace.log("TOKEN_REFRESH", "success", { newExpiry: refreshed.accessTokenExpires ? new Date(refreshed.accessTokenExpires).toISOString() : "unknown" });
-      return refreshed.accessToken;
-    }
-    trace.error("TOKEN_REFRESH", "failed");
-    return null;
-  };
-
   // ── Process only the first file (single upload per request for now) ──
   // Multiple files will need multiple requests. The frontend already loops.
   const file = files[0];

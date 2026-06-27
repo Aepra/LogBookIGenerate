@@ -28,23 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get access token from session
-    const accessToken = (session as unknown as { accessToken?: string }).accessToken;
-    const accessTokenExpires = (session as unknown as { accessTokenExpires?: number }).accessTokenExpires;
-    const isTokenStale = accessTokenExpires && Date.now() >= accessTokenExpires;
-    const hasRefreshToken = !!((session as unknown as { refreshToken?: string }).refreshToken);
-
-    console.log("[EXPORT] accessToken:", !!accessToken, "stale:", isTokenStale, "hasRefresh:", hasRefreshToken);
-
-    if (!accessToken) {
-      console.error("[EXPORT] FAIL: no access token");
-      return NextResponse.json(
-        {
-          error: "Sesi Google Drive telah berakhir. Silakan logout dan login ulang.",
-          code: "NO_ACCESS_TOKEN",
-        },
-        { status: 401 }
-      );
-    }
+    
 
     if (isTokenStale && !hasRefreshToken) {
       console.error("[EXPORT] FAIL: token expired, no refresh");
